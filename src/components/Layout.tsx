@@ -26,9 +26,18 @@ const navigation = [
   { to: '/help', label: 'Ajuda', icon: HelpCircle },
 ];
 
-export default function Layout() {
+interface LayoutProps {
+  onLogout: () => void;
+}
+
+export default function Layout({ onLogout }: LayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const user = mockUser;
+
+  const handleLogout = () => {
+    onLogout();
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -95,7 +104,10 @@ export default function Layout() {
               })}
             </nav>
             <div className="p-4 border-t">
-              <button className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              >
                 <LogOut size={20} className="mr-3" />
                 Sair
               </button>
@@ -135,7 +147,10 @@ export default function Layout() {
                 })}
               </nav>
               <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-                <button className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                >
                   <LogOut size={20} className="mr-3" />
                   Sair
                 </button>

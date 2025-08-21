@@ -14,7 +14,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-400 p-4">
       <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-orange-500 text-center">YNOVA</h1>
+        <h1 className="text-2xl font-bold text-[#FE5200] text-center">YNOVA</h1>
         <p className="text-gray-500 text-center mb-6">Portal dos Consultores</p>
         <form
           onSubmit={(e) => onLogin(e, email, password)}
@@ -26,7 +26,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FE5200]"
               required
             />
           </div>
@@ -36,7 +36,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FE5200]"
               required
             />
           </div>
@@ -44,7 +44,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-md flex items-center justify-center"
+            className="w-full bg-[#FE5200] hover:bg-[#FE5200]/90 text-white font-medium py-2 rounded-md flex items-center justify-center"
           >
             {isLoading ? (
               <RefreshCw className="animate-spin" size={20} />
@@ -54,7 +54,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
           </button>
         </form>
         <div className="mt-4 text-center">
-          <a href="#" className="text-sm text-orange-500 hover:text-orange-600">
+          <a href="#" className="text-sm text-[#FE5200] hover:text-[#FE5200]/80">
             Esqueci minha senha
           </a>
         </div>

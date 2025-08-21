@@ -32,7 +32,7 @@ export default function ModalUploadInvoice({ isOpen, onClose }: ModalUploadInvoi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
+      <div className="bg-white dark:bg-[#3E3E3E] p-6 rounded-lg w-full max-w-md">
         <h2 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100">Enviar Fatura</h2>
         <div
           onDragOver={(e) => {
@@ -43,8 +43,8 @@ export default function ModalUploadInvoice({ isOpen, onClose }: ModalUploadInvoi
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-lg p-6 text-center ${
             isDragging
-              ? 'border-orange-500 bg-orange-50 dark:bg-orange-900'
-              : 'border-gray-300 dark:border-gray-600'
+              ? 'border-[#FE5200] bg-[#FE5200]/10 dark:bg-[#FE5200]/20'
+              : 'border-gray-300 dark:border-[#1E1E1E]'
           }`}
         >
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
@@ -59,7 +59,7 @@ export default function ModalUploadInvoice({ isOpen, onClose }: ModalUploadInvoi
           />
           <label
             htmlFor="invoice-upload"
-            className="inline-block px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg cursor-pointer"
+            className="inline-block px-4 py-2 bg-[#FE5200] hover:bg-[#FE5200]/90 text-white rounded-lg cursor-pointer"
           >
             Selecionar arquivo
           </label>

@@ -48,41 +48,41 @@ export default function LeadsPage() {
         <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leads</h1>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => setIsUploadOpen(true)}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+              className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full sm:w-auto"
             >
               Enviar Fatura
             </button>
-            <div className="relative">
+            <div className="relative w-full sm:w-64">
               <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300" />
               <input
                 type="text"
                 placeholder="Buscar leads..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300"
               />
             </div>
-            <button className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700" aria-label="Filtros">
+            <button className="p-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg hover:bg-gray-50 dark:hover:bg-[#1E1E1E]" aria-label="Filtros">
               <Filter size={20} />
             </button>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-[#3E3E3E] rounded-lg shadow-sm border border-gray-200 dark:border-[#1E1E1E] overflow-hidden">
           {leads.length === 0 ? (
             <EmptyState
               message="Você ainda não possui leads. Importe um arquivo ou cadastre manualmente."
               action={
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium">Importar Leads</button>
+              <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg font-medium">Importar Leads</button>
               }
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-[#1E1E1E]">
+                <thead className="bg-gray-50 dark:bg-[#3E3E3E]">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Empresa</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">CNPJ</th>
@@ -92,7 +92,7 @@ export default function LeadsPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-[#3E3E3E] divide-y divide-gray-200 dark:divide-[#1E1E1E]">
                   {leads
                     .filter(
                       (lead) =>
@@ -100,7 +100,7 @@ export default function LeadsPage() {
                         lead.cnpj.includes(searchTerm)
                     )
                     .map((lead) => (
-                      <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-[#1E1E1E]">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{lead.nome}</div>
@@ -116,7 +116,7 @@ export default function LeadsPage() {
                           <StatusBadge status={lead.statusMigracao} type="migracao" />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium relative">
-                          <button onClick={() => setSelectedLead(lead)} className="text-orange-600 hover:text-orange-900 mr-4">
+                          <button onClick={() => setSelectedLead(lead)} className="text-[#FE5200] hover:text-[#FE5200]/80 mr-4">
                             Abrir
                           </button>
                           <button className="text-blue-600 hover:text-blue-900 mr-4">Solicitar fatura</button>
@@ -128,11 +128,11 @@ export default function LeadsPage() {
                             <MoreVertical size={16} />
                           </button>
                           {openMenuId === lead.id && (
-                            <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
-                              <button className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setOpenMenuId(null)}>
+                            <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-[#3E3E3E] border border-gray-200 dark:border-[#1E1E1E] rounded-md shadow-lg z-10">
+                              <button className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#1E1E1E]" onClick={() => setOpenMenuId(null)}>
                                 Editar
                               </button>
-                              <button className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => { setLeadToDelete(lead); setIsDeleteOpen(true); setOpenMenuId(null); }}>
+                              <button className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-500 hover:bg-gray-100 dark:hover:bg-[#1E1E1E]" onClick={() => { setLeadToDelete(lead); setIsDeleteOpen(true); setOpenMenuId(null); }}>
                                 Excluir
                               </button>
                             </div>
@@ -149,12 +149,12 @@ export default function LeadsPage() {
       <ModalUploadInvoice isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
       {isDeleteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-sm">
+          <div className="bg-white dark:bg-[#3E3E3E] p-6 rounded-lg w-full max-w-sm">
             <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Deseja realmente excluir?</h2>
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setIsDeleteOpen(false)}
-                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg"
+                className="px-4 py-2 bg-white dark:bg-[#3E3E3E] text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-[#1E1E1E] rounded-lg"
               >
                 Cancelar
               </button>
@@ -175,14 +175,14 @@ export default function LeadsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
-        <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" aria-label="Voltar">
+        <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E1E] rounded-lg" aria-label="Voltar">
           ←
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedLead.nome}</h1>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="bg-white dark:bg-[#3E3E3E] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div>
             <label className="text-sm text-gray-600 dark:text-gray-300">CNPJ</label>
             <p className="font-medium text-gray-900 dark:text-gray-100">{selectedLead.cnpj}</p>
@@ -205,7 +205,7 @@ export default function LeadsPage() {
           </div>
         </div>
 
-        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+        <div className="border-b border-gray-200 dark:border-[#1E1E1E] mb-6">
           <nav className="-mb-px flex space-x-8" role="tablist">
             {[
               { id: 'resumo', label: 'Resumo' },
@@ -222,8 +222,8 @@ export default function LeadsPage() {
                 aria-selected={activeTab === tab.id}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
-                    ? 'border-orange-500 text-orange-600 dark:text-orange-300'
-                    : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
+                    ? 'border-[#FE5200] text-[#FE5200] dark:text-[#FE5200]'
+                    : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-[#1E1E1E]'
                 }`}
               >
                 {tab.label}
@@ -234,7 +234,7 @@ export default function LeadsPage() {
 
         {activeTab === 'resumo' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
                 <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">Próximas Ações</h4>
                 <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
@@ -246,13 +246,13 @@ export default function LeadsPage() {
                 <h4 className="font-medium text-green-900 dark:text-green-200 mb-2">Status Atual</h4>
                 <p className="text-sm text-green-700 dark:text-green-300">Lead qualificado - documentação em análise</p>
               </div>
-              <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
-                <h4 className="font-medium text-orange-900 dark:text-orange-200 mb-2">Última Interação</h4>
-                <p className="text-sm text-orange-700 dark:text-orange-300">{new Date(selectedLead.ultimaInteracao).toLocaleDateString('pt-BR')}</p>
+              <div className="bg-[#FE5200]/10 dark:bg-[#FE5200]/20 p-4 rounded-lg">
+                <h4 className="font-medium text-[#FE5200] dark:text-[#FE5200] mb-2">Última Interação</h4>
+                <p className="text-sm text-[#FE5200] dark:text-[#FE5200]">{new Date(selectedLead.ultimaInteracao).toLocaleDateString('pt-BR')}</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <div className="bg-gray-50 dark:bg-[#1E1E1E] p-4 rounded-lg">
               <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Timeline de Eventos</h4>
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
@@ -271,36 +271,36 @@ export default function LeadsPage() {
         {activeTab === 'cadastro' && (
           <div className="space-y-6">
             <div className="flex justify-end">
-              <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+              <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
                 <Edit size={16} />
                 Editar
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Razão Social</label>
-                <input type="text" value={selectedLead.nome} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                <input type="text" value={selectedLead.nome} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CNPJ</label>
-                <input type="text" value={selectedLead.cnpj} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                <input type="text" value={selectedLead.cnpj} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Segmento</label>
-                <input type="text" value={selectedLead.segmento} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                <input type="text" value={selectedLead.segmento} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contato Principal</label>
-                <input type="text" value={selectedLead.contato} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                <input type="text" value={selectedLead.contato} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Telefone</label>
-                <input type="text" value={selectedLead.telefone} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                <input type="text" value={selectedLead.telefone} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
-                <input type="email" value={selectedLead.email} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
+                <input type="email" value={selectedLead.email} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
             </div>
           </div>
@@ -311,7 +311,7 @@ export default function LeadsPage() {
             <div className="flex justify-between items-center">
               <h4 className="font-medium text-gray-900 dark:text-gray-100">Faturas Enviadas</h4>
               <div className="flex space-x-2">
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
+                <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
                   <Upload size={16} />
                   Enviar Fatura
                 </button>
@@ -343,7 +343,7 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button className="text-blue-600 hover:text-blue-900 mr-4">Revisar dados</button>
-                      <button className="text-orange-600 hover:text-orange-900">Reprocessar</button>
+                      <button className="text-[#FE5200] hover:text-[#FE5200]/80">Reprocessar</button>
                     </td>
                   </tr>
                 </tbody>
@@ -372,7 +372,7 @@ export default function LeadsPage() {
               </div>
               <div className="mt-4 flex space-x-2">
                 <button className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">Aceitar</button>
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">Editar</button>
+                <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-3 py-1 rounded text-sm">Editar</button>
                 <button className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Rejeitar</button>
               </div>
             </div>
@@ -441,7 +441,7 @@ export default function LeadsPage() {
         {activeTab === 'contratos' && (
           <div className="space-y-6">
             <h4 className="font-medium text-gray-900">Histórico de Contratos</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h5 className="font-medium text-blue-900">Volume Total</h5>
                 <p className="text-2xl font-bold text-blue-900">12.000 MWh</p>
@@ -450,9 +450,9 @@ export default function LeadsPage() {
                 <h5 className="font-medium text-green-900">Preço Médio</h5>
                 <p className="text-2xl font-bold text-green-900">R$ 285/MWh</p>
               </div>
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <h5 className="font-medium text-orange-900">Contratos Ativos</h5>
-                <p className="text-2xl font-bold text-orange-900">3</p>
+              <div className="bg-[#FE5200]/10 p-4 rounded-lg">
+                <h5 className="font-medium text-[#FE5200]">Contratos Ativos</h5>
+                <p className="text-2xl font-bold text-[#FE5200]">3</p>
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -470,7 +470,7 @@ export default function LeadsPage() {
                 <span className="text-sm text-gray-600">75%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
-                <div className="bg-orange-500 h-2 rounded-full w-3/4"></div>
+                <div className="bg-[#FE5200] h-2 rounded-full w-3/4"></div>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
@@ -484,7 +484,7 @@ export default function LeadsPage() {
                   <span className="text-xs text-gray-500 ml-auto">12/01/2025</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                  <AlertCircle className="h-5 w-5 text-[#FE5200]" />
                   <span className="text-sm text-gray-700">Protocolado na CCEE</span>
                   <span className="text-xs text-gray-500 ml-auto">Em andamento</span>
                 </div>

@@ -28,12 +28,12 @@ export default function TrainingSidebar({
   };
 
   return (
-    <div className="w-64 md:w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto">
+    <div className="w-64 md:w-72 bg-white dark:bg-[#3E3E3E] border-r border-gray-200 dark:border-[#1E1E1E] h-full overflow-y-auto text-gray-900 dark:text-gray-100">
       {modules.map((module, mIndex) => (
         <div key={module.title}>
           <button
             onClick={() => toggleModule(mIndex)}
-            className="w-full flex items-center justify-between px-4 py-2 text-left font-medium border-b border-gray-200 dark:border-gray-700"
+            className="w-full flex items-center justify-between px-4 py-2 text-left font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-[#1E1E1E]"
           >
             {module.title}
             <ChevronDown
@@ -53,8 +53,8 @@ export default function TrainingSidebar({
                     onClick={() => onSelectLesson(mIndex, lIndex)}
                     className={`w-full flex items-center text-left px-2 py-1 rounded-md text-sm ${
                       isActive
-                        ? 'bg-orange-50 text-orange-600 dark:bg-orange-900 dark:text-orange-300'
-                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-[#FE5200]/10 text-[#FE5200] dark:bg-[#FE5200]/20 dark:text-[#FE5200]'
+                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1E1E1E]'
                     }`}
                   >
                     {completedLessons[id] && (

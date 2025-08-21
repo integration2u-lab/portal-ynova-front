@@ -17,7 +17,7 @@ export default function StatusBadge({
         case 'vermelho':
           return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800';
         default:
-          return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600';
+          return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-[#1E1E1E] dark:text-gray-200 dark:border-[#1E1E1E]';
       }
     } else {
       switch (status) {
@@ -30,7 +30,7 @@ export default function StatusBadge({
         case 'rejeitado':
           return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800';
         default:
-          return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600';
+          return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-[#1E1E1E] dark:text-gray-200 dark:border-[#1E1E1E]';
       }
     }
   };

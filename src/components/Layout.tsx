@@ -76,8 +76,8 @@ export default function Layout({ onLogout }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#1E1E1E] dark:text-gray-100">
+      <header className="bg-white dark:bg-[#3E3E3E] shadow-sm border-b border-gray-200 dark:border-[#1E1E1E]">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -88,7 +88,7 @@ export default function Layout({ onLogout }: LayoutProps) {
               >
                 <Menu size={24} />
               </button>
-              <div className="text-xl font-bold text-orange-500 ml-2 md:ml-0">YNOVA</div>
+              <div className="text-xl font-bold text-[#FE5200] ml-2 md:ml-0">YNOVA</div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative" ref={notifRef}>
@@ -100,7 +100,7 @@ export default function Layout({ onLogout }: LayoutProps) {
                   <Bell size={20} />
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 text-sm text-gray-700 dark:text-gray-200">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#3E3E3E] border border-gray-200 dark:border-[#1E1E1E] rounded-lg shadow-lg p-4 text-sm text-gray-700 dark:text-gray-200">
                     <ul className="space-y-2">
                       <li>Verifique seu e-mail</li>
                       <li>Nova mensagem da gestão</li>
@@ -116,11 +116,11 @@ export default function Layout({ onLogout }: LayoutProps) {
                   checked={theme === 'dark'}
                   onChange={toggleTheme}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#FE5200]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FE5200]"></div>
               </label>
               <div className="flex items-center space-x-2">
                 <div
-                  className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center"
+                  className="w-8 h-8 bg-[#FE5200] rounded-full flex items-center justify-center"
                   aria-hidden
                 >
                   <span className="text-white text-sm font-medium">
@@ -138,7 +138,7 @@ export default function Layout({ onLogout }: LayoutProps) {
 
       <div className="flex">
         <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:top-16">
-          <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+          <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#3E3E3E] border-r border-gray-200 dark:border-[#1E1E1E]">
             <nav className="flex-1 px-4 py-4 space-y-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
@@ -149,8 +149,8 @@ export default function Layout({ onLogout }: LayoutProps) {
                     className={({ isActive }) =>
                       `w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                         isActive
-                          ? 'bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-700'
-                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                          ? 'bg-[#FE5200]/10 text-[#FE5200] border border-[#FE5200]/40 dark:bg-[#FE5200]/20 dark:text-[#FE5200] dark:border-[#FE5200]/40'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-[#1E1E1E]'
                       }`
                     }
                   >
@@ -160,7 +160,7 @@ export default function Layout({ onLogout }: LayoutProps) {
                 );
               })}
             </nav>
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="p-4 border-t border-gray-200 dark:border-[#1E1E1E]">
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors"
@@ -174,9 +174,9 @@ export default function Layout({ onLogout }: LayoutProps) {
 
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-50 bg-black/50" role="dialog" aria-modal="true">
-            <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800">
-              <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="text-xl font-bold text-orange-500">YNOVA</div>
+            <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-[#3E3E3E]">
+              <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-[#1E1E1E]">
+                <div className="text-xl font-bold text-[#FE5200]">YNOVA</div>
                 <button onClick={() => setIsMobileMenuOpen(false)} aria-label="Fechar menu">
                   <X size={24} />
                 </button>
@@ -192,8 +192,8 @@ export default function Layout({ onLogout }: LayoutProps) {
                       className={({ isActive }) =>
                         `w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                           isActive
-                            ? 'bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-700'
-                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                            ? 'bg-[#FE5200]/10 text-[#FE5200] border border-[#FE5200]/40 dark:bg-[#FE5200]/20 dark:text-[#FE5200] dark:border-[#FE5200]/40'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-[#1E1E1E]'
                         }`
                       }
                     >
@@ -203,7 +203,7 @@ export default function Layout({ onLogout }: LayoutProps) {
                   );
                 })}
               </nav>
-              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-[#1E1E1E]">
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors"

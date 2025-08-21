@@ -5,13 +5,13 @@ import { mockPropostas, mockLeads } from '../data/mockData';
 export default function ProposalsPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Propostas</h1>
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Propostas</h1>
+      <div className="bg-white dark:bg-[#3E3E3E] rounded-lg shadow-sm border border-gray-200 dark:border-[#1E1E1E] overflow-hidden">
         <div className="p-6 border-b">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Lista de Propostas</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Lista de Propostas</h3>
             <div className="flex items-center space-x-2">
-              <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <select className="px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg text-sm bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100">
                 <option>Todas</option>
                 <option>Em negociação</option>
                 <option>Aceitas</option>
@@ -21,8 +21,8 @@ export default function ProposalsPage() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-[#1E1E1E]">
+            <thead className="bg-gray-50 dark:bg-[#3E3E3E]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
@@ -31,7 +31,7 @@ export default function ProposalsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-[#1E1E1E]">
               {mockPropostas.map((p) => (
                 <tr key={p.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{mockLeads.find((l) => l.id === p.leadId)?.nome}</td>
@@ -53,7 +53,7 @@ export default function ProposalsPage() {
                       <Download size={14} />
                       PPT
                     </button>
-                    <button className="text-orange-600 hover:text-orange-900 inline-flex items-center gap-1">
+                    <button className="text-[#FE5200] hover:text-[#FE5200]/80 inline-flex items-center gap-1">
                       <Eye size={14} />
                       Ver
                     </button>

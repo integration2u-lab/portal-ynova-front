@@ -69,7 +69,7 @@ export default function TrainingPage() {
           onClick={() => setIsSidebarOpen(false)}
         >
           <div
-            className="absolute left-0 top-0 bottom-0 w-64 bg-white"
+            className="absolute left-0 top-0 bottom-0 w-64 bg-white dark:bg-[#3E3E3E]"
             onClick={(e) => e.stopPropagation()}
           >
             <TrainingSidebar
@@ -85,7 +85,7 @@ export default function TrainingPage() {
 
       <div className="flex-1 p-4">
         <button
-          className="md:hidden mb-4 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+          className="md:hidden mb-4 bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full"
           onClick={() => setIsSidebarOpen(true)}
         >
           Módulos
@@ -94,7 +94,7 @@ export default function TrainingPage() {
         <VideoPlayer videoId="z_Xe5j8xkfI" />
         <button
           onClick={handleNext}
-          className="mt-4 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+          className="mt-4 bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full md:w-auto"
         >
           Próximo
         </button>

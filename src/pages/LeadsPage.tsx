@@ -16,6 +16,7 @@ import {
   AlertCircle,
   XCircle,
 } from 'lucide-react';
+import ModalUploadInvoice from '../components/ModalUploadInvoice';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import { mockLeads, mockPropostas } from '../data/mockData';
@@ -25,13 +26,21 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [activeTab, setActiveTab] = useState('resumo');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   if (!selectedLead) {
     return (
-      <div className="space-y-6">
+      <>
+        <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsUploadOpen(true)}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+            >
+              Send Invoice
+            </button>
             <div className="relative">
               <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -109,6 +118,8 @@ export default function LeadsPage() {
           )}
         </div>
       </div>
+      <ModalUploadInvoice isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
+      </>
     );
   }
 

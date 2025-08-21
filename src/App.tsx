@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import HelpPage from './pages/HelpPage';
 import LoginPage from './pages/LoginPage';
+import TrainingPage from './pages/TrainingPage';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="proposals" element={<ProposalsPage />} />
             <Route path="commissions" element={<CommissionsPage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="training" element={<TrainingPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="help" element={<HelpPage />} />
           </Route>

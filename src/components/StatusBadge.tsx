@@ -11,26 +11,26 @@ export default function StatusBadge({
     if (type === 'funil') {
       switch (status) {
         case 'verde':
-          return 'bg-green-100 text-green-800 border-green-200';
+          return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800';
         case 'amarelo':
-          return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+          return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-800';
         case 'vermelho':
-          return 'bg-red-100 text-red-800 border-red-200';
+          return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800';
         default:
-          return 'bg-gray-100 text-gray-800 border-gray-200';
+          return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600';
       }
     } else {
       switch (status) {
         case 'aprovado':
-          return 'bg-green-100 text-green-800 border-green-200';
+          return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800';
         case 'em_analise':
-          return 'bg-blue-100 text-blue-800 border-blue-200';
+          return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800';
         case 'pendente':
-          return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+          return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-800';
         case 'rejeitado':
-          return 'bg-red-100 text-red-800 border-red-200';
+          return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800';
         default:
-          return 'bg-gray-100 text-gray-800 border-gray-200';
+          return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600';
       }
     }
   };

@@ -28,12 +28,12 @@ export default function TrainingSidebar({
   };
 
   return (
-    <div className="w-64 md:w-72 bg-white border-r h-full overflow-y-auto">
+    <div className="w-64 md:w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto">
       {modules.map((module, mIndex) => (
         <div key={module.title}>
           <button
             onClick={() => toggleModule(mIndex)}
-            className="w-full flex items-center justify-between px-4 py-2 text-left font-medium border-b"
+            className="w-full flex items-center justify-between px-4 py-2 text-left font-medium border-b border-gray-200 dark:border-gray-700"
           >
             {module.title}
             <ChevronDown
@@ -53,8 +53,8 @@ export default function TrainingSidebar({
                     onClick={() => onSelectLesson(mIndex, lIndex)}
                     className={`w-full flex items-center text-left px-2 py-1 rounded-md text-sm ${
                       isActive
-                        ? 'bg-orange-50 text-orange-600'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-orange-50 text-orange-600 dark:bg-orange-900 dark:text-orange-300'
+                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     {completedLessons[id] && (

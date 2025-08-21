@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import {
   Home,
@@ -23,7 +23,7 @@ const navigation = [
   { to: '/proposals', label: 'Propostas', icon: FileText },
   { to: '/commissions', label: 'Comissões', icon: DollarSign },
   { to: '/profile', label: 'Perfil', icon: User },
-  { to: '/training', label: 'Consultant Training', icon: GraduationCap },
+  { to: '/training', label: 'Treinamento para Consultor', icon: GraduationCap },
   { to: '/notifications', label: 'Notificações', icon: Bell },
   { to: '/help', label: 'Ajuda', icon: HelpCircle },
 ];
@@ -34,6 +34,40 @@ interface LayoutProps {
 
 export default function Layout({ onLogout }: LayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (stored) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const toggleTheme = () =>
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+
   const user = mockUser;
 
   const handleLogout = () => {
@@ -42,13 +76,13 @@ export default function Layout({ onLogout }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <button
-                className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900"
+                className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                 onClick={() => setIsMobileMenuOpen(true)}
                 aria-label="Abrir menu"
               >
@@ -57,12 +91,33 @@ export default function Layout({ onLogout }: LayoutProps) {
               <div className="text-xl font-bold text-orange-500 ml-2 md:ml-0">YNOVA</div>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                className="p-2 text-gray-600 hover:text-gray-900"
-                aria-label="Notificações"
-              >
-                <Bell size={20} />
-              </button>
+              <div className="relative" ref={notifRef}>
+                <button
+                  className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  aria-label="Notificações"
+                  onClick={() => setShowNotifications((p) => !p)}
+                >
+                  <Bell size={20} />
+                </button>
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 text-sm text-gray-700 dark:text-gray-200">
+                    <ul className="space-y-2">
+                      <li>Verifique seu e-mail</li>
+                      <li>Nova mensagem da gestão</li>
+                      <li>Duas reuniões perdidas</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={theme === 'dark'}
+                  onChange={toggleTheme}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+              </label>
               <div className="flex items-center space-x-2">
                 <div
                   className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center"
@@ -72,7 +127,7 @@ export default function Layout({ onLogout }: LayoutProps) {
                     {user.name.split(' ').map((n) => n[0]).join('')}
                   </span>
                 </div>
-                <span className="hidden sm:block text-sm font-medium text-gray-700">
+                <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
                   {user.name}
                 </span>
               </div>
@@ -83,7 +138,7 @@ export default function Layout({ onLogout }: LayoutProps) {
 
       <div className="flex">
         <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:top-16">
-          <div className="flex-1 flex flex-col min-h-0 bg-white border-r">
+          <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
             <nav className="flex-1 px-4 py-4 space-y-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
@@ -94,8 +149,8 @@ export default function Layout({ onLogout }: LayoutProps) {
                     className={({ isActive }) =>
                       `w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                         isActive
-                          ? 'bg-orange-50 text-orange-600 border border-orange-200'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? 'bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-700'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`
                     }
                   >
@@ -105,10 +160,10 @@ export default function Layout({ onLogout }: LayoutProps) {
                 );
               })}
             </nav>
-            <div className="p-4 border-t">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors"
               >
                 <LogOut size={20} className="mr-3" />
                 Sair
@@ -119,8 +174,8 @@ export default function Layout({ onLogout }: LayoutProps) {
 
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-50 bg-black/50" role="dialog" aria-modal="true">
-            <div className="fixed inset-y-0 left-0 w-64 bg-white">
-              <div className="flex items-center justify-between h-16 px-4 border-b">
+            <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800">
+              <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="text-xl font-bold text-orange-500">YNOVA</div>
                 <button onClick={() => setIsMobileMenuOpen(false)} aria-label="Fechar menu">
                   <X size={24} />
@@ -137,8 +192,8 @@ export default function Layout({ onLogout }: LayoutProps) {
                       className={({ isActive }) =>
                         `w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                           isActive
-                            ? 'bg-orange-50 text-orange-600 border border-orange-200'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            ? 'bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-700'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
                         }`
                       }
                     >
@@ -148,10 +203,10 @@ export default function Layout({ onLogout }: LayoutProps) {
                   );
                 })}
               </nav>
-              <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
+              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors"
                 >
                   <LogOut size={20} className="mr-3" />
                   Sair

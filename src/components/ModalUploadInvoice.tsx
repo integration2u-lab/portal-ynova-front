@@ -32,8 +32,8 @@ export default function ModalUploadInvoice({ isOpen, onClose }: ModalUploadInvoi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white p-6 rounded-lg w-full max-w-md">
-        <h2 className="text-lg font-medium mb-4">Enviar Fatura</h2>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
+        <h2 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100">Enviar Fatura</h2>
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -42,10 +42,12 @@ export default function ModalUploadInvoice({ isOpen, onClose }: ModalUploadInvoi
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-lg p-6 text-center ${
-            isDragging ? 'border-orange-500 bg-orange-50' : 'border-gray-300'
+            isDragging
+              ? 'border-orange-500 bg-orange-50 dark:bg-orange-900'
+              : 'border-gray-300 dark:border-gray-600'
           }`}
         >
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
             Arraste e solte o arquivo PDF/PNG/JPG aqui
           </p>
           <input
@@ -64,7 +66,7 @@ export default function ModalUploadInvoice({ isOpen, onClose }: ModalUploadInvoi
         </div>
         <button
           onClick={onClose}
-          className="mt-4 text-sm text-gray-600 hover:text-gray-900"
+          className="mt-4 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
         >
           Cancelar
         </button>

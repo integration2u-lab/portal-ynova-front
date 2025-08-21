@@ -20,6 +20,7 @@ import ModalUploadInvoice from '../components/ModalUploadInvoice';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import { mockLeads, mockPropostas } from '../data/mockData';
+import { toast } from 'sonner';
 import { Lead } from '../types';
 
 export default function LeadsPage() {
@@ -27,38 +28,51 @@ export default function LeadsPage() {
   const [activeTab, setActiveTab] = useState('resumo');
   const [searchTerm, setSearchTerm] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  const handleDelete = () => {
+    if (leadToDelete) {
+      setLeads((prev) => prev.filter((l) => l.id !== leadToDelete.id));
+      setLeadToDelete(null);
+      setIsDeleteOpen(false);
+      toast.success('Lead excluído com sucesso');
+    }
+  };
 
   if (!selectedLead) {
     return (
       <>
         <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leads</h1>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setIsUploadOpen(true)}
               className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
             >
-              Send Invoice
+              Enviar Fatura
             </button>
             <div className="relative">
-              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300" />
               <input
                 type="text"
                 placeholder="Buscar leads..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300"
               />
             </div>
-            <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50" aria-label="Filtros">
+            <button className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700" aria-label="Filtros">
               <Filter size={20} />
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          {mockLeads.length === 0 ? (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {leads.length === 0 ? (
             <EmptyState
               message="Você ainda não possui leads. Importe um arquivo ou cadastre manualmente."
               action={
@@ -67,48 +81,62 @@ export default function LeadsPage() {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CNPJ</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Segmento</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Funil</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Migração</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Empresa</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">CNPJ</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Segmento</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status Funil</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Migração</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {mockLeads
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {leads
                     .filter(
                       (lead) =>
                         lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         lead.cnpj.includes(searchTerm)
                     )
                     .map((lead) => (
-                      <tr key={lead.id} className="hover:bg-gray-50">
+                      <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{lead.nome}</div>
-                            <div className="text-sm text-gray-500">{lead.contato}</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{lead.nome}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-300">{lead.contato}</div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lead.cnpj}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lead.segmento}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{lead.cnpj}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{lead.segmento}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusBadge status={lead.statusFunil} type="funil" />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusBadge status={lead.statusMigracao} type="migracao" />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium relative">
                           <button onClick={() => setSelectedLead(lead)} className="text-orange-600 hover:text-orange-900 mr-4">
                             Abrir
                           </button>
                           <button className="text-blue-600 hover:text-blue-900 mr-4">Solicitar fatura</button>
-                          <button className="text-gray-400 hover:text-gray-600" aria-label="Mais ações">
+                          <button
+                            className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-400"
+                            aria-label="Mais ações"
+                            onClick={() => setOpenMenuId(openMenuId === lead.id ? null : lead.id)}
+                          >
                             <MoreVertical size={16} />
                           </button>
+                          {openMenuId === lead.id && (
+                            <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
+                              <button className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setOpenMenuId(null)}>
+                                Editar
+                              </button>
+                              <button className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => { setLeadToDelete(lead); setIsDeleteOpen(true); setOpenMenuId(null); }}>
+                                Excluir
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -119,6 +147,27 @@ export default function LeadsPage() {
         </div>
       </div>
       <ModalUploadInvoice isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
+      {isDeleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-sm">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Deseja realmente excluir?</h2>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setIsDeleteOpen(false)}
+                className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+              >
+                Deletar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </>
     );
   }
@@ -126,37 +175,37 @@ export default function LeadsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
-        <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Voltar">
+        <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" aria-label="Voltar">
           ←
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">{selectedLead.nome}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedLead.nome}</h1>
       </div>
 
-      <div className="bg-white rounded-lg p-6 shadow-sm border">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div>
-            <label className="text-sm text-gray-600">CNPJ</label>
-            <p className="font-medium">{selectedLead.cnpj}</p>
+            <label className="text-sm text-gray-600 dark:text-gray-300">CNPJ</label>
+            <p className="font-medium text-gray-900 dark:text-gray-100">{selectedLead.cnpj}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-600">Contato</label>
-            <p className="font-medium">{selectedLead.contato}</p>
+            <label className="text-sm text-gray-600 dark:text-gray-300">Contato</label>
+            <p className="font-medium text-gray-900 dark:text-gray-100">{selectedLead.contato}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-600">Status Funil</label>
+            <label className="text-sm text-gray-600 dark:text-gray-300">Status Funil</label>
             <div className="mt-1">
               <StatusBadge status={selectedLead.statusFunil} type="funil" />
             </div>
           </div>
           <div>
-            <label className="text-sm text-gray-600">Status Migração</label>
+            <label className="text-sm text-gray-600 dark:text-gray-300">Status Migração</label>
             <div className="mt-1">
               <StatusBadge status={selectedLead.statusMigracao} type="migracao" />
             </div>
           </div>
         </div>
 
-        <div className="border-b mb-6">
+        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
           <nav className="-mb-px flex space-x-8" role="tablist">
             {[
               { id: 'resumo', label: 'Resumo' },
@@ -173,8 +222,8 @@ export default function LeadsPage() {
                 aria-selected={activeTab === tab.id}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
-                    ? 'border-orange-500 text-orange-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-orange-500 text-orange-600 dark:text-orange-300'
+                    : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 {tab.label}
@@ -186,33 +235,33 @@ export default function LeadsPage() {
         {activeTab === 'resumo' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">Próximas Ações</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
+              <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">Próximas Ações</h4>
+                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                   <li>• Validar fatura de energia</li>
                   <li>• Agendar apresentação</li>
                 </ul>
               </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium text-green-900 mb-2">Status Atual</h4>
-                <p className="text-sm text-green-700">Lead qualificado - documentação em análise</p>
+              <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
+                <h4 className="font-medium text-green-900 dark:text-green-200 mb-2">Status Atual</h4>
+                <p className="text-sm text-green-700 dark:text-green-300">Lead qualificado - documentação em análise</p>
               </div>
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <h4 className="font-medium text-orange-900 mb-2">Última Interação</h4>
-                <p className="text-sm text-orange-700">{new Date(selectedLead.ultimaInteracao).toLocaleDateString('pt-BR')}</p>
+              <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
+                <h4 className="font-medium text-orange-900 dark:text-orange-200 mb-2">Última Interação</h4>
+                <p className="text-sm text-orange-700 dark:text-orange-300">{new Date(selectedLead.ultimaInteracao).toLocaleDateString('pt-BR')}</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-3">Timeline de Eventos</h4>
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Timeline de Eventos</h4>
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Fatura enviada - 15/01/2025</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Fatura enviada - 15/01/2025</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Primeiro contato - 10/01/2025</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Primeiro contato - 10/01/2025</span>
                 </div>
               </div>
             </div>
@@ -230,28 +279,28 @@ export default function LeadsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Razão Social</label>
-                <input type="text" value={selectedLead.nome} readOnly className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Razão Social</label>
+                <input type="text" value={selectedLead.nome} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">CNPJ</label>
-                <input type="text" value={selectedLead.cnpj} readOnly className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CNPJ</label>
+                <input type="text" value={selectedLead.cnpj} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Segmento</label>
-                <input type="text" value={selectedLead.segmento} readOnly className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Segmento</label>
+                <input type="text" value={selectedLead.segmento} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contato Principal</label>
-                <input type="text" value={selectedLead.contato} readOnly className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contato Principal</label>
+                <input type="text" value={selectedLead.contato} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
-                <input type="text" value={selectedLead.telefone} readOnly className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Telefone</label>
+                <input type="text" value={selectedLead.telefone} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-                <input type="email" value={selectedLead.email} readOnly className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
+                <input type="email" value={selectedLead.email} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
               </div>
             </div>
           </div>
@@ -260,7 +309,7 @@ export default function LeadsPage() {
         {activeTab === 'faturas' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h4 className="font-medium text-gray-900">Faturas Enviadas</h4>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">Faturas Enviadas</h4>
               <div className="flex space-x-2">
                 <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
                   <Upload size={16} />

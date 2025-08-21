@@ -10,7 +10,7 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
       <iframe
         className="w-full h-full"
         src={`https://www.youtube.com/embed/${videoId}`}
-        title="Training video"
+        title="Vídeo de treinamento"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       ></iframe>

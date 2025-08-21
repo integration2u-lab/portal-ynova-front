@@ -3,8 +3,8 @@ import TrainingSidebar, { Module } from '../components/TrainingSidebar';
 import VideoPlayer from '../components/VideoPlayer';
 
 const modules: Module[] = Array.from({ length: 10 }, (_, i) => ({
-  title: `Module ${i + 1}`,
-  lessons: Array.from({ length: 3 + (i % 3) }, (_, j) => `Lesson ${j + 1}`),
+  title: `Módulo ${i + 1}`,
+  lessons: Array.from({ length: 3 + (i % 3) }, (_, j) => `Lição ${j + 1}`),
 }));
 
 export default function TrainingPage() {
@@ -28,15 +28,27 @@ export default function TrainingPage() {
   const completedCount = Object.keys(completedLessons).length;
   const progress = Math.round((completedCount / totalLessons) * 100);
 
+  useEffect(() => {
+    localStorage.setItem('trainingOverallProgress', progress.toString());
+  }, [progress]);
+
   const handleSelectLesson = (mIndex: number, lIndex: number) => {
     setCurrentModule(mIndex);
     setCurrentLesson(lIndex);
     setIsSidebarOpen(false);
   };
 
-  const markComplete = () => {
+  const handleNext = () => {
     const id = `${currentModule}-${currentLesson}`;
     setCompletedLessons((prev) => ({ ...prev, [id]: true }));
+
+    const lessonsInModule = modules[currentModule].lessons.length;
+    if (currentLesson < lessonsInModule - 1) {
+      setCurrentLesson(currentLesson + 1);
+    } else if (currentModule < modules.length - 1) {
+      setCurrentModule(currentModule + 1);
+      setCurrentLesson(0);
+    }
   };
 
   return (
@@ -76,15 +88,15 @@ export default function TrainingPage() {
           className="md:hidden mb-4 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
           onClick={() => setIsSidebarOpen(true)}
         >
-          Modules
+          Módulos
         </button>
-        <div className="mb-4 text-sm text-gray-600">Progress: {progress}%</div>
+        <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">Progresso: {progress}%</div>
         <VideoPlayer videoId="z_Xe5j8xkfI" />
         <button
-          onClick={markComplete}
+          onClick={handleNext}
           className="mt-4 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
         >
-          Complete lesson
+          Próximo
         </button>
       </div>
     </div>

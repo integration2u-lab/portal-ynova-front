@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  GraduationCap,
 } from 'lucide-react';
 import { mockUser } from '../data/mockData';
 
@@ -22,6 +23,7 @@ const navigation = [
   { to: '/proposals', label: 'Propostas', icon: FileText },
   { to: '/commissions', label: 'Comissões', icon: DollarSign },
   { to: '/profile', label: 'Perfil', icon: User },
+  { to: '/training', label: 'Consultant Training', icon: GraduationCap },
   { to: '/notifications', label: 'Notificações', icon: Bell },
   { to: '/help', label: 'Ajuda', icon: HelpCircle },
 ];

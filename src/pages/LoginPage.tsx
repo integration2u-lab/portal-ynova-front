@@ -26,7 +26,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FE5200]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
               required
             />
           </div>
@@ -36,7 +36,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FE5200]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
               required
             />
           </div>

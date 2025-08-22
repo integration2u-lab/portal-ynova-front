@@ -29,7 +29,7 @@ export default function App() {
     setError(null);
     setIsLoading(true);
     setTimeout(() => {
-      if (email === 'admin' && password === 'admin') {
+      if (email === 'admin@admin' && password === 'admin') {
         setIsAuthenticated(true);
         navigate('/dashboard');
       } else {

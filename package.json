@@ -19,6 +19,8 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",

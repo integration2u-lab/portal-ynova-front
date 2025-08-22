@@ -1,16 +1,17 @@
 import React from 'react';
+import { cnText } from '../utils/cnText';
 
 export default function NotificationsPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Preferências de Notificação</h1>
-      <div className="bg-white dark:bg-[#3E3E3E] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
+      <h1 className={`text-2xl font-bold ${cnText()}`}>Preferências de Notificação</h1>
+      <div className="bg-white dark:bg-[#1a1f24] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#2b3238]">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Canais de Notificação</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-medium text-gray-900">WhatsApp</h4>
-              <p className="text-sm text-gray-600">Receba atualizações via WhatsApp</p>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">WhatsApp</h4>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Receba atualizações via WhatsApp</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" defaultChecked className="sr-only peer" />
@@ -19,8 +20,8 @@ export default function NotificationsPage() {
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-medium text-gray-900">E-mail</h4>
-              <p className="text-sm text-gray-600">Receba atualizações por e-mail</p>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">E-mail</h4>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Receba atualizações por e-mail</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" defaultChecked className="sr-only peer" />
@@ -30,14 +31,14 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-[#3E3E3E] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
+      <div className="bg-white dark:bg-[#1a1f24] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#2b3238]">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Tipos de Notificação</h3>
         <div className="space-y-4">
           {[{ label: 'Novos leads', desc: 'Quando um novo lead for atribuído' }, { label: 'Contratos fechados', desc: 'Quando um contrato for assinado' }, { label: 'Comissão paga', desc: 'Quando uma comissão for processada' }, { label: 'Lembretes de reunião', desc: 'Lembrete 15 minutos antes da reunião' }].map((item, index) => (
             <div key={index} className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-gray-900">{item.label}</h4>
-                <p className="text-sm text-gray-600">{item.desc}</p>
+                <h4 className="font-medium text-gray-900 dark:text-gray-100">{item.label}</h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{item.desc}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" defaultChecked className="sr-only peer" />
@@ -48,16 +49,16 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-[#3E3E3E] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
+      <div className="bg-white dark:bg-[#1a1f24] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#2b3238]">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Horário de Silêncio</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Das</label>
-            <input type="time" defaultValue="22:00" className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg focus:ring-2 focus:ring-[#FE5200] bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+            <input type="time" defaultValue="22:00" className="w-full px-3 py-2 border border-gray-300 dark:border-[#2b3238] rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-[#20262c] placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Até</label>
-            <input type="time" defaultValue="08:00" className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg focus:ring-2 focus:ring-[#FE5200] bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+            <input type="time" defaultValue="08:00" className="w-full px-3 py-2 border border-gray-300 dark:border-[#2b3238] rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-[#20262c] placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100" />
           </div>
         </div>
       </div>

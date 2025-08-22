@@ -37,6 +37,7 @@ interface LayoutProps {
 export default function Layout({ onLogout, theme, toggleTheme }: LayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,61 +59,76 @@ export default function Layout({ onLogout, theme, toggleTheme }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#111418] dark:text-gray-100">
-      <header className="bg-white dark:bg-[#1a1f24] shadow-sm border-b border-gray-200 dark:border-[#2b3238]">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+      <header
+        role="banner"
+        className="sticky top-0 z-50 h-16 bg-[#FE5200] text-white shadow-sm px-4 md:px-6"
+      >
+        <div className="flex items-center justify-between h-full">
+          <a
+            href="/dashboard"
+            aria-label="Ir para a página inicial"
+            className="flex items-center gap-2"
+          >
+            {logoError ? (
+              <span className="font-semibold text-white">YNOVA</span>
+            ) : (
+              <img
+                src="https://i.imgur.com/JbYumHC.png"
+                alt="YNOVA"
+                className="h-7 md:h-8 w-auto"
+                loading="eager"
+                onError={() => setLogoError(true)}
+              />
+            )}
+          </a>
+          <div className="flex items-center gap-4">
+            <div className="relative" ref={notifRef}>
               <button
-                className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                onClick={() => setIsMobileMenuOpen(true)}
-                aria-label="Abrir menu"
+                className="p-2 rounded-md text-white hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                aria-label="Notificações"
+                onClick={() => setShowNotifications((p) => !p)}
               >
-                <Menu size={24} />
+                <Bell size={20} />
               </button>
-              <div className="text-xl font-bold text-[#FE5200] ml-2 md:ml-0">YNOVA</div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative" ref={notifRef}>
-                <button
-                  className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                  aria-label="Notificações"
-                  onClick={() => setShowNotifications((p) => !p)}
-                >
-                  <Bell size={20} />
-                </button>
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1a1f24] border border-gray-200 dark:border-[#2b3238] rounded-lg shadow-lg p-4 text-sm text-gray-700 dark:text-gray-200">
-                    <ul className="space-y-2">
-                      <li>Verifique seu e-mail</li>
-                      <li>Nova mensagem da gestão</li>
-                      <li>Duas reuniões perdidas</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={theme === 'dark'}
-                  onChange={toggleTheme}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#FE5200]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FE5200]"></div>
-              </label>
-              <div className="flex items-center space-x-2">
-                <div
-                  className="w-8 h-8 bg-[#FE5200] rounded-full flex items-center justify-center"
-                  aria-hidden
-                >
-                  <span className="text-white text-sm font-medium">
-                    {user.name.split(' ').map((n) => n[0]).join('')}
-                  </span>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1a1f24] border border-gray-200 dark:border-[#2b3238] rounded-lg shadow-lg p-4 text-sm text-gray-700 dark:text-gray-200">
+                  <ul className="space-y-2">
+                    <li>Verifique seu e-mail</li>
+                    <li>Nova mensagem da gestão</li>
+                    <li>Duas reuniões perdidas</li>
+                  </ul>
                 </div>
-                <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  {user.name}
+              )}
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer focus-within:ring-2 focus-within:ring-white/30 rounded-full">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={theme === 'dark'}
+                onChange={toggleTheme}
+              />
+              <div className="w-11 h-6 bg-white/30 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white/30"></div>
+            </label>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"
+                aria-hidden
+              >
+                <span className="text-white text-sm font-medium">
+                  {user.name.split(' ').map((n) => n[0]).join('')}
                 </span>
               </div>
+              <span className="hidden sm:block text-sm font-medium text-white">
+                {user.name}
+              </span>
             </div>
+            <button
+              className="md:hidden p-2 rounded-md text-white hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Abrir menu"
+            >
+              <Menu size={24} />
+            </button>
           </div>
         </div>
       </header>

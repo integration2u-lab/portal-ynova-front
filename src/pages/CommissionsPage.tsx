@@ -9,7 +9,7 @@ export default function CommissionsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Comissões & Performance</h1>
         <div className="flex items-center space-x-2">
-          <select className="px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg text-sm bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100">
+          <select className="px-3 py-2 border border-gray-300 dark:border-[#2b3238] rounded-lg text-sm bg-white dark:bg-[#20262c] text-gray-900 dark:text-gray-100">
             <option>Janeiro 2025</option>
             <option>Dezembro 2024</option>
             <option>Novembro 2024</option>
@@ -25,34 +25,34 @@ export default function CommissionsPage() {
         <KpiCard title="Taxa de Sucesso" value="72%" icon={TrendingUp} color="purple" />
       </div>
 
-      <div className="bg-white dark:bg-[#3E3E3E] rounded-lg shadow-sm border border-gray-200 dark:border-[#1E1E1E] overflow-hidden">
-        <div className="p-6 border-b border-gray-200 dark:border-[#1E1E1E]">
+      <div className="bg-white dark:bg-[#1a1f24] rounded-lg shadow-sm border border-gray-200 dark:border-[#2b3238] overflow-hidden">
+        <div className="p-6 border-b border-gray-200 dark:border-[#2b3238]">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Histórico de Deals</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-[#1E1E1E]">
-            <thead className="bg-gray-50 dark:bg-[#3E3E3E]">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-[#2b3238]">
+            <thead className="bg-gray-50 dark:bg-[#1a1f24]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor Contrato</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comissão</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cliente</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Valor Contrato</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Comissão</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Data</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-[#1E1E1E]">
+            <tbody className="divide-y divide-gray-200 dark:divide-[#2b3238]">
               {mockComissoes.map((c) => (
-                <tr key={c.dealId}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{mockLeads.find((l) => l.id === c.leadId)?.nome}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">R$ {c.valorContrato.toLocaleString('pt-BR')}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">R$ {c.comissao.toLocaleString('pt-BR')}</td>
+                <tr key={c.dealId} className="hover:bg-gray-50 dark:hover:bg-[#1f252b]">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">{mockLeads.find((l) => l.id === c.leadId)?.nome}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">R$ {c.valorContrato.toLocaleString('pt-BR')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">R$ {c.comissao.toLocaleString('pt-BR')}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
                       c.statusPagamento === 'pago'
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-100 dark:border-green-800'
                         : c.statusPagamento === 'pendente'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-blue-100 text-blue-800'
+                        ? 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-100 dark:border-yellow-800'
+                        : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-800'
                     }`}>
                       {c.statusPagamento === 'pago'
                         ? 'Pago'
@@ -61,7 +61,7 @@ export default function CommissionsPage() {
                         : 'Processando'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(c.data).toLocaleDateString('pt-BR')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">{new Date(c.data).toLocaleDateString('pt-BR')}</td>
                 </tr>
               ))}
             </tbody>

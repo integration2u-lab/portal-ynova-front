@@ -16,7 +16,7 @@ export default function KpiCard({ title, value, icon: Icon, color = 'blue' }: Kp
   } as const;
 
   return (
-    <div className="bg-white dark:bg-[#3E3E3E] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
+    <div className="bg-white dark:bg-[#1a1f24] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#2b3238]">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">{title}</p>

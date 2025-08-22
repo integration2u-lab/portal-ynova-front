@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import { useTheme } from './hooks/useTheme';
 import DashboardPage from './pages/DashboardPage';
 import LeadsPage from './pages/LeadsPage';
 import AgendaPage from './pages/AgendaPage';
@@ -17,6 +18,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogin = (
     e: React.FormEvent,
@@ -46,7 +48,7 @@ export default function App() {
     <Routes>
       {isAuthenticated ? (
         <>
-          <Route path="/" element={<Layout onLogout={handleLogout} />}>
+          <Route path="/" element={<Layout onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />}> 
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="leads" element={<LeadsPage />} />

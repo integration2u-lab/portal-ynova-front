@@ -73,9 +73,9 @@ export default function Layout({ onLogout, theme, toggleTheme }: LayoutProps) {
               <span className="font-semibold text-white">YNOVA</span>
             ) : (
               <img
-                src="https://i.imgur.com/JbYumHC.png"
+                src="https://i.imgur.com/eFBlDDM.png"
                 alt="YNOVA"
-                className="h-7 md:h-8 w-auto"
+                className="h-40 md:h-40 w-auto"
                 loading="eager"
                 onError={() => setLogoError(true)}
               />

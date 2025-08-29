@@ -308,21 +308,21 @@ export default function LeadsPage() {
 
         {activeTab === 'faturas' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h4 className="font-medium text-gray-900 dark:text-gray-100">Faturas Enviadas</h4>
-              <div className="flex space-x-2">
-                <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 w-full sm:w-auto">
                   <Upload size={16} />
                   Enviar Fatura
                 </button>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
+                <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 w-full sm:w-auto">
                   <Download size={16} />
                   Nova Extração
                 </button>
               </div>
             </div>
 
-            <div className="bg-white border rounded-lg overflow-hidden">
+            <div className="bg-white border rounded-lg overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -352,7 +352,7 @@ export default function LeadsPage() {
 
             <div className="bg-blue-50 p-4 rounded-lg">
               <h5 className="font-medium text-blue-900 mb-2">Dados Extraídos - Confiança: 95%</h5>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-blue-700 font-medium">Consumo kWh:</span>
                   <span className="ml-2">12.450</span>
@@ -370,10 +370,10 @@ export default function LeadsPage() {
                   <span className="ml-2">ENEL SP</span>
                 </div>
               </div>
-              <div className="mt-4 flex space-x-2">
-                <button className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">Aceitar</button>
-                <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-3 py-1 rounded text-sm">Editar</button>
-                <button className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Rejeitar</button>
+              <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                <button className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm w-full sm:w-auto">Aceitar</button>
+                <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-3 py-1 rounded text-sm w-full sm:w-auto">Editar</button>
+                <button className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm w-full sm:w-auto">Rejeitar</button>
               </div>
             </div>
           </div>
@@ -381,14 +381,14 @@ export default function LeadsPage() {
 
         {activeTab === 'propostas' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h4 className="font-medium text-gray-900">Histórico de Propostas</h4>
-              <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium text-sm">
+              <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium text-sm w-full sm:w-auto">
                 Nova Proposta
               </button>
             </div>
 
-            <div className="bg-white border rounded-lg overflow-hidden">
+            <div className="bg-white border rounded-lg overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>

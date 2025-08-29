@@ -8,10 +8,10 @@ export default function ProposalsPage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Propostas</h1>
       <div className="bg-white dark:bg-[#1a1f24] rounded-lg shadow-sm border border-gray-200 dark:border-[#2b3238] overflow-hidden">
         <div className="p-6 border-b border-gray-200 dark:border-[#2b3238]">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Lista de Propostas</h3>
-            <div className="flex items-center space-x-2">
-              <select className="px-3 py-2 border border-gray-300 dark:border-[#2b3238] rounded-lg text-sm bg-white dark:bg-[#20262c] text-gray-900 dark:text-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+              <select className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-[#2b3238] rounded-lg text-sm bg-white dark:bg-[#20262c] text-gray-900 dark:text-gray-100">
                 <option>Todas</option>
                 <option>Em negociação</option>
                 <option>Aceitas</option>

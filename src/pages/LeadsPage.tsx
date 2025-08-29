@@ -33,6 +33,12 @@ export default function LeadsPage() {
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
+  const filteredLeads = leads.filter(
+    (lead) =>
+      lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.cnpj.includes(searchTerm)
+  );
+
   const handleDelete = () => {
     if (leadToDelete) {
       setLeads((prev) => prev.filter((l) => l.id !== leadToDelete.id));
@@ -46,106 +52,178 @@ export default function LeadsPage() {
     return (
       <>
         <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leads</h1>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => setIsUploadOpen(true)}
-              className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full sm:w-auto"
-            >
-              Enviar Fatura
-            </button>
-            <div className="relative w-full sm:w-64">
-              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300" />
-              <input
-                type="text"
-                placeholder="Buscar leads..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300"
-              />
+          <header className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 min-w-0 w-full">
+              <div className="relative flex-1 min-w-0">
+                <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300" />
+                <input
+                  type="text"
+                  placeholder="Buscar leads..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300"
+                />
+              </div>
+              <button
+                className="p-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg hover:bg-gray-50 dark:hover:bg-[#1E1E1E] w-full sm:w-auto"
+                aria-label="Filtros"
+              >
+                <Filter size={20} />
+              </button>
             </div>
-            <button className="p-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg hover:bg-gray-50 dark:hover:bg-[#1E1E1E]" aria-label="Filtros">
-              <Filter size={20} />
-            </button>
+            <div className="flex flex-col gap-2 w-full">
+              <button
+                onClick={() => setIsUploadOpen(true)}
+                className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full"
+              >
+                Enviar Fatura
+              </button>
+            </div>
+          </header>
+
+          <div className="bg-white dark:bg-[#3E3E3E] rounded-lg shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
+            {filteredLeads.length === 0 ? (
+              <EmptyState
+                message="Você ainda não possui leads. Importe um arquivo ou cadastre manualmente."
+                action={
+                  <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg font-medium">
+                    Importar Leads
+                  </button>
+                }
+              />
+            ) : (
+              <>
+                <div className="space-y-3 sm:hidden">
+                  {filteredLeads.map((lead) => (
+                    <article
+                      key={lead.id}
+                      className="rounded-lg border p-4 bg-white dark:bg-[#3E3E3E]"
+                    >
+                      <div className="font-semibold truncate">{lead.nome}</div>
+                      <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <dt className="text-gray-500">CNPJ</dt>
+                          <dd className="truncate">{lead.cnpj}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-gray-500">Status</dt>
+                          <dd>
+                            <StatusBadge status={lead.statusFunil} type="funil" />
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="mt-3 flex flex-col gap-2">
+                        <button
+                          className="w-full"
+                          onClick={() => setSelectedLead(lead)}
+                        >
+                          Abrir
+                        </button>
+                        <button className="w-full">Solicitar fatura</button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="hidden sm:block">
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto min-w-[720px] divide-y divide-gray-200 dark:divide-[#1E1E1E]">
+                      <thead className="bg-gray-50 dark:bg-[#3E3E3E]">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Empresa</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">CNPJ</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Segmento</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status Funil</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Migração</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-[#3E3E3E] divide-y divide-gray-200 dark:divide-[#1E1E1E]">
+                        {filteredLeads.map((lead) => (
+                          <tr
+                            key={lead.id}
+                            className="hover:bg-gray-50 dark:hover:bg-[#1E1E1E]"
+                          >
+                            <td className="px-6 py-4 whitespace-normal break-words truncate">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-normal break-words truncate">
+                                  {lead.nome}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-300 whitespace-normal break-words truncate">
+                                  {lead.contato}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-normal break-words truncate text-sm text-gray-900 dark:text-gray-100">
+                              {lead.cnpj}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              {lead.segmento}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <StatusBadge status={lead.statusFunil} type="funil" />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <StatusBadge
+                                status={lead.statusMigracao}
+                                type="migracao"
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium relative">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setSelectedLead(lead)}
+                                  className="text-[#FE5200] hover:text-[#FE5200]/80"
+                                >
+                                  Abrir
+                                </button>
+                                <button className="text-blue-600 hover:text-blue-900">
+                                  Solicitar fatura
+                                </button>
+                                <button
+                                  className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-400"
+                                  aria-label="Mais ações"
+                                  onClick={() =>
+                                    setOpenMenuId(
+                                      openMenuId === lead.id ? null : lead.id
+                                    )
+                                  }
+                                >
+                                  <MoreVertical size={16} />
+                                </button>
+                              </div>
+                              {openMenuId === lead.id && (
+                                <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-[#3E3E3E] border border-gray-200 dark:border-[#1E1E1E] rounded-md shadow-lg z-10">
+                                  <button
+                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#1E1E1E]"
+                                    onClick={() => setOpenMenuId(null)}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-500 hover:bg-gray-100 dark:hover:bg-[#1E1E1E]"
+                                    onClick={() => {
+                                      setLeadToDelete(lead);
+                                      setIsDeleteOpen(true);
+                                      setOpenMenuId(null);
+                                    }}
+                                  >
+                                    Excluir
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
-
-        <div className="bg-white dark:bg-[#3E3E3E] rounded-lg shadow-sm border border-gray-200 dark:border-[#1E1E1E] overflow-hidden">
-          {leads.length === 0 ? (
-            <EmptyState
-              message="Você ainda não possui leads. Importe um arquivo ou cadastre manualmente."
-              action={
-              <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg font-medium">Importar Leads</button>
-              }
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-[#1E1E1E]">
-                <thead className="bg-gray-50 dark:bg-[#3E3E3E]">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Empresa</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">CNPJ</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Segmento</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status Funil</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Migração</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-[#3E3E3E] divide-y divide-gray-200 dark:divide-[#1E1E1E]">
-                  {leads
-                    .filter(
-                      (lead) =>
-                        lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        lead.cnpj.includes(searchTerm)
-                    )
-                    .map((lead) => (
-                      <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-[#1E1E1E]">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{lead.nome}</div>
-                            <div className="text-sm text-gray-500 dark:text-gray-300">{lead.contato}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{lead.cnpj}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{lead.segmento}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <StatusBadge status={lead.statusFunil} type="funil" />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <StatusBadge status={lead.statusMigracao} type="migracao" />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium relative">
-                          <button onClick={() => setSelectedLead(lead)} className="text-[#FE5200] hover:text-[#FE5200]/80 mr-4">
-                            Abrir
-                          </button>
-                          <button className="text-blue-600 hover:text-blue-900 mr-4">Solicitar fatura</button>
-                          <button
-                            className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-400"
-                            aria-label="Mais ações"
-                            onClick={() => setOpenMenuId(openMenuId === lead.id ? null : lead.id)}
-                          >
-                            <MoreVertical size={16} />
-                          </button>
-                          {openMenuId === lead.id && (
-                            <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-[#3E3E3E] border border-gray-200 dark:border-[#1E1E1E] rounded-md shadow-lg z-10">
-                              <button className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#1E1E1E]" onClick={() => setOpenMenuId(null)}>
-                                Editar
-                              </button>
-                              <button className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-500 hover:bg-gray-100 dark:hover:bg-[#1E1E1E]" onClick={() => { setLeadToDelete(lead); setIsDeleteOpen(true); setOpenMenuId(null); }}>
-                                Excluir
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
       <ModalUploadInvoice isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
       {isDeleteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

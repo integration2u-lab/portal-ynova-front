@@ -214,7 +214,7 @@ export default function Layout({ onLogout, theme, toggleTheme }: LayoutProps) {
         )}
 
         <main className="flex-1 md:ml-64">
-          <div className="p-4 sm:p-6 lg:p-8">
+          <div className="w-full max-w-screen-lg mx-auto px-4 overflow-x-hidden py-4 sm:py-6 lg:py-8">
             <Outlet />
           </div>
         </main>

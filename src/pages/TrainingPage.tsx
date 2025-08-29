@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TrainingSidebar, { Module } from '../components/TrainingSidebar';
 import VideoPlayer from '../components/VideoPlayer';
+import StudyMaterials from '../components/StudyMaterials';
 
 const modules: Module[] = Array.from({ length: 10 }, (_, i) => ({
   title: `Módulo ${i + 1}`,
@@ -90,14 +91,27 @@ export default function TrainingPage() {
         >
           Módulos
         </button>
+
+        <div className="md:hidden mb-4">
+          <StudyMaterials />
+        </div>
+
         <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">Progresso: {progress}%</div>
-        <VideoPlayer videoId="z_Xe5j8xkfI" />
-        <button
-          onClick={handleNext}
-          className="mt-4 bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full md:w-auto"
-        >
-          Próximo
-        </button>
+
+        <div className="md:flex md:space-x-4">
+          <div className="flex-1">
+            <VideoPlayer videoId="z_Xe5j8xkfI" />
+            <button
+              onClick={handleNext}
+              className="mt-4 bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full md:w-auto"
+            >
+              Próximo
+            </button>
+          </div>
+          <div className="hidden md:block md:w-64">
+            <StudyMaterials />
+          </div>
+        </div>
       </div>
     </div>
   );

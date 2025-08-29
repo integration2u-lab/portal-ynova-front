@@ -6,15 +6,15 @@ import { mockComissoes, mockLeads } from '../data/mockData';
 export default function CommissionsPage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Comissões & Performance</h1>
-        <div className="flex items-center space-x-2">
-          <select className="px-3 py-2 border border-gray-300 dark:border-[#2b3238] rounded-lg text-sm bg-white dark:bg-[#20262c] text-gray-900 dark:text-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+          <select className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-[#2b3238] rounded-lg text-sm bg-white dark:bg-[#20262c] text-gray-900 dark:text-gray-100">
             <option>Janeiro 2025</option>
             <option>Dezembro 2024</option>
             <option>Novembro 2024</option>
           </select>
-          <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">Exportar CSV</button>
+          <button className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">Exportar CSV</button>
         </div>
       </div>
 

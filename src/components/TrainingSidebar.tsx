@@ -11,7 +11,7 @@ interface TrainingSidebarProps {
   currentModule: number;
   currentLesson: number;
   onSelectLesson: (moduleIndex: number, lessonIndex: number) => void;
-  completedLessons: Record<string, boolean>;
+  completedLessons: Set<string>;
 }
 
 export default function TrainingSidebar({
@@ -28,7 +28,7 @@ export default function TrainingSidebar({
   };
 
   return (
-    <div className="w-64 md:w-72 bg-white dark:bg-[#3E3E3E] border-r border-gray-200 dark:border-[#1E1E1E] h-full overflow-y-auto text-gray-900 dark:text-gray-100">
+    <div className="w-full md:w-64 lg:w-72 bg-white dark:bg-[#3E3E3E] border-t md:border-t-0 md:border-r border-gray-200 dark:border-[#1E1E1E] h-full overflow-y-auto text-gray-900 dark:text-gray-100">
       {modules.map((module, mIndex) => (
         <div key={module.title}>
           <button
@@ -47,6 +47,7 @@ export default function TrainingSidebar({
                 const id = `${mIndex}-${lIndex}`;
                 const isActive =
                   mIndex === currentModule && lIndex === currentLesson;
+                const isCompleted = completedLessons.has(id);
                 return (
                   <button
                     key={id}
@@ -57,13 +58,13 @@ export default function TrainingSidebar({
                         : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1E1E1E]'
                     }`}
                   >
-                    {completedLessons[id] && (
+                    {isCompleted && (
                       <CheckCircle
                         size={14}
                         className="text-green-500 mr-2 flex-shrink-0"
                       />
                     )}
-                    {!completedLessons[id] && <span className="w-4 mr-2" />}
+                    {!isCompleted && <span className="w-4 mr-2" />}
                     {lesson}
                   </button>
                 );

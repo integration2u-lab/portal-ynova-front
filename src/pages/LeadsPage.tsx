@@ -38,19 +38,18 @@ export default function LeadsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 10000,
     total: 0,
     pages: 0,
   });
 
   // API Functions
-  const fetchLeads = async (page = 1, limit = 10, search = '') => {
+  const fetchLeads = async (page = 1, limit = 10) => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        ...(search && { search }),
       });
 
       const response = await apiRequestWithAuth(`/leads?${params}`);
@@ -87,7 +86,7 @@ export default function LeadsPage() {
       }
 
       toast.success('Lead excluído com sucesso');
-      fetchLeads(pagination.page, pagination.limit, searchTerm);
+      fetchLeads(pagination.page, pagination.limit);
     } catch (error) {
       console.error('Error deleting lead:', error);
       toast.error('Erro ao excluir lead');
@@ -117,13 +116,7 @@ export default function LeadsPage() {
     fetchLeads();
   }, []);
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchLeads(1, pagination.limit, searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  // Removed search effect - now using client-side filtering only
 
   const filteredLeads = leads.filter(
     (lead) =>
@@ -141,7 +134,7 @@ export default function LeadsPage() {
   };
 
   const handleUploadSuccess = (newLead: Lead) => {
-    fetchLeads(pagination.page, pagination.limit, searchTerm);
+    fetchLeads(pagination.page, pagination.limit);
   };
 
   if (!selectedLead) {

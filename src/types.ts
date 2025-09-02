@@ -1,14 +1,27 @@
 export type Lead = {
-  id: number;
-  nome: string;
+  id: string;
+  consumer_unit: string;
+  client_name: string;
   cnpj: string;
-  segmento: string;
-  statusFunil: 'vermelho' | 'amarelo' | 'verde';
-  statusMigracao: 'em_analise' | 'aprovado' | 'rejeitado' | 'pendente';
-  ultimaInteracao: string;
-  contato?: string;
-  telefone?: string;
-  email?: string;
+  month: string;
+  year: number;
+  energy_value: string;
+  invoice_amount: string;
+  status: 'pending' | 'approved' | 'rejected' | 'processing';
+  file_url?: string;
+  file_key?: string;
+  file_name?: string;
+  observations?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+  user?: {
+    id: string;
+    name: string;
+    surname: string;
+    email: string;
+  };
 };
 
 export type Proposta = {

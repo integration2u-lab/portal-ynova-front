@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -15,6 +15,7 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
+  FileText,
 } from 'lucide-react';
 import ModalUploadInvoice from '../components/ModalUploadInvoice';
 import StatusBadge from '../components/StatusBadge';
@@ -22,30 +23,124 @@ import EmptyState from '../components/EmptyState';
 import { mockLeads, mockPropostas } from '../data/mockData';
 import { toast } from 'sonner';
 import { Lead } from '../types';
+import { apiRequestWithAuth } from '../utils/api';
 
 export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [activeTab, setActiveTab] = useState('resumo');
   const [searchTerm, setSearchTerm] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0,
+  });
+
+  // API Functions
+  const fetchLeads = async (page = 1, limit = 10, search = '') => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search }),
+      });
+
+      const response = await apiRequestWithAuth(`/leads?${params}`);
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar leads');
+      }
+
+      const result = await response.json();
+      if (result.data?.leads) {
+        setLeads(result.data.leads);
+      }
+      if (result.data?.pagination) {
+        setPagination(result.data.pagination);
+      }
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      toast.error('Erro ao carregar leads');
+      // Fallback to mock data
+      setLeads(mockLeads);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteLead = async (leadId: string) => {
+    try {
+      const response = await apiRequestWithAuth(`/leads/${leadId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao excluir lead');
+      }
+
+      toast.success('Lead excluído com sucesso');
+      fetchLeads(pagination.page, pagination.limit, searchTerm);
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast.error('Erro ao excluir lead');
+    }
+  };
+
+  const downloadFile = async (leadId: string) => {
+    try {
+      const response = await apiRequestWithAuth(`/leads/${leadId}/download`);
+
+      if (!response.ok) {
+        throw new Error('Erro ao baixar arquivo');
+      }
+
+      const result = await response.json();
+      if (result.data?.url) {
+        window.open(result.data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast.error('Erro ao baixar arquivo');
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchLeads(1, pagination.limit, searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   const filteredLeads = leads.filter(
     (lead) =>
-      lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.cnpj.includes(searchTerm)
+      lead.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.cnpj.includes(searchTerm) ||
+      lead.consumer_unit.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDelete = () => {
     if (leadToDelete) {
-      setLeads((prev) => prev.filter((l) => l.id !== leadToDelete.id));
+      deleteLead(leadToDelete.id);
       setLeadToDelete(null);
       setIsDeleteOpen(false);
-      toast.success('Lead excluído com sucesso');
     }
+  };
+
+  const handleUploadSuccess = (newLead: Lead) => {
+    fetchLeads(pagination.page, pagination.limit, searchTerm);
   };
 
   if (!selectedLead) {
@@ -100,7 +195,7 @@ export default function LeadsPage() {
                       key={lead.id}
                       className="rounded-lg border p-4 bg-white dark:bg-[#3E3E3E]"
                     >
-                      <div className="font-semibold truncate">{lead.nome}</div>
+                      <div className="font-semibold truncate">{lead.client_name}</div>
                       <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <dt className="text-gray-500">CNPJ</dt>
@@ -109,7 +204,10 @@ export default function LeadsPage() {
                         <div>
                           <dt className="text-gray-500">Status</dt>
                           <dd>
-                            <StatusBadge status={lead.statusFunil} type="funil" />
+                            <StatusBadge 
+                              status={lead.status === 'pending' ? 'amarelo' : lead.status === 'approved' ? 'verde' : 'vermelho'} 
+                              type="funil" 
+                            />
                           </dd>
                         </div>
                       </dl>
@@ -131,11 +229,12 @@ export default function LeadsPage() {
                     <table className="w-full table-auto min-w-[720px] divide-y divide-gray-200 dark:divide-[#1E1E1E]">
                       <thead className="bg-gray-50 dark:bg-[#3E3E3E]">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Empresa</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">CNPJ</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Segmento</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status Funil</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Migração</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Período</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Valor Fatura</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Arquivo</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
                         </tr>
                       </thead>
@@ -148,10 +247,10 @@ export default function LeadsPage() {
                             <td className="px-6 py-4 whitespace-normal break-words truncate">
                               <div>
                                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-normal break-words truncate">
-                                  {lead.nome}
+                                  {lead.client_name}
                                 </div>
                                 <div className="text-sm text-gray-500 dark:text-gray-300 whitespace-normal break-words truncate">
-                                  {lead.contato}
+                                  UC: {lead.consumer_unit}
                                 </div>
                               </div>
                             </td>
@@ -159,16 +258,30 @@ export default function LeadsPage() {
                               {lead.cnpj}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                              {lead.segmento}
+                              {lead.month} {lead.year}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                              R$ {lead.invoice_amount ? parseFloat(lead.invoice_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <StatusBadge status={lead.statusFunil} type="funil" />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <StatusBadge
-                                status={lead.statusMigracao}
-                                type="migracao"
+                              <StatusBadge 
+                                status={lead.status === 'pending' ? 'amarelo' : lead.status === 'approved' ? 'verde' : 'vermelho'} 
+                                type="funil" 
                               />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {lead.file_name ? (
+                                <div className="flex items-center space-x-2">
+                                  <FileText size={16} className="text-[#FE5200]" />
+                                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                                    {lead.file_name}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400 dark:text-gray-500">
+                                  Sem arquivo
+                                </span>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium relative">
                               <div className="flex items-center gap-2">
@@ -178,22 +291,28 @@ export default function LeadsPage() {
                                 >
                                   Abrir
                                 </button>
-                                <button className="text-blue-600 hover:text-blue-900">
-                                  Solicitar fatura
-                                </button>
-                                <button
+                                {lead.file_name && (
+                                  <button 
+                                    onClick={() => downloadFile(lead.id)}
+                                    className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                                  >
+                                    <Download size={14} />
+                                    Baixar
+                                  </button>
+                                )}
+                                {/* <button
                                   className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-400"
                                   aria-label="Mais ações"
                                   onClick={() =>
                                     setOpenMenuId(
-                                      openMenuId === lead.id ? null : lead.id
+                                      openMenuId === parseInt(lead.id) ? null : parseInt(lead.id)
                                     )
                                   }
                                 >
                                   <MoreVertical size={16} />
-                                </button>
+                                </button> */}
                               </div>
-                              {openMenuId === lead.id && (
+                              {openMenuId === parseInt(lead.id) && (
                                 <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-[#3E3E3E] border border-gray-200 dark:border-[#1E1E1E] rounded-md shadow-lg z-10">
                                   <button
                                     className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#1E1E1E]"
@@ -224,7 +343,11 @@ export default function LeadsPage() {
             )}
           </div>
         </div>
-      <ModalUploadInvoice isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
+      <ModalUploadInvoice 
+        isOpen={isUploadOpen} 
+        onClose={() => setIsUploadOpen(false)} 
+        onSuccess={handleUploadSuccess}
+      />
       {isDeleteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-[#3E3E3E] p-6 rounded-lg w-full max-w-sm">
@@ -256,7 +379,7 @@ export default function LeadsPage() {
         <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-[#1E1E1E] rounded-lg" aria-label="Voltar">
           ←
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedLead.nome}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedLead.client_name}</h1>
       </div>
 
       <div className="bg-white dark:bg-[#3E3E3E] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
@@ -266,19 +389,20 @@ export default function LeadsPage() {
             <p className="font-medium text-gray-900 dark:text-gray-100">{selectedLead.cnpj}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300">Contato</label>
-            <p className="font-medium text-gray-900 dark:text-gray-100">{selectedLead.contato}</p>
+            <label className="text-sm text-gray-600 dark:text-gray-300">Unidade Consumidora</label>
+            <p className="font-medium text-gray-900 dark:text-gray-100">{selectedLead.consumer_unit}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300">Status Funil</label>
-            <div className="mt-1">
-              <StatusBadge status={selectedLead.statusFunil} type="funil" />
-            </div>
+            <label className="text-sm text-gray-600 dark:text-gray-300">Período</label>
+            <p className="font-medium text-gray-900 dark:text-gray-100">{selectedLead.month} {selectedLead.year}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300">Status Migração</label>
+            <label className="text-sm text-gray-600 dark:text-gray-300">Status</label>
             <div className="mt-1">
-              <StatusBadge status={selectedLead.statusMigracao} type="migracao" />
+              <StatusBadge 
+                status={selectedLead.status === 'pending' ? 'amarelo' : selectedLead.status === 'approved' ? 'verde' : 'vermelho'} 
+                type="funil" 
+              />
             </div>
           </div>
         </div>
@@ -325,8 +449,8 @@ export default function LeadsPage() {
                 <p className="text-sm text-green-700 dark:text-green-300">Lead qualificado - documentação em análise</p>
               </div>
               <div className="bg-[#FE5200]/10 dark:bg-[#FE5200]/20 p-4 rounded-lg">
-                <h4 className="font-medium text-[#FE5200] dark:text-[#FE5200] mb-2">Última Interação</h4>
-                <p className="text-sm text-[#FE5200] dark:text-[#FE5200]">{new Date(selectedLead.ultimaInteracao).toLocaleDateString('pt-BR')}</p>
+                <h4 className="font-medium text-[#FE5200] dark:text-[#FE5200] mb-2">Última Atualização</h4>
+                <p className="text-sm text-[#FE5200] dark:text-[#FE5200]">{selectedLead.updated_at ? new Date(selectedLead.updated_at).toLocaleDateString('pt-BR') : 'N/A'}</p>
               </div>
             </div>
 
@@ -358,27 +482,31 @@ export default function LeadsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Razão Social</label>
-                <input type="text" value={selectedLead.nome} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+                <input type="text" value={selectedLead.client_name} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CNPJ</label>
                 <input type="text" value={selectedLead.cnpj} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Segmento</label>
-                <input type="text" value={selectedLead.segmento} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unidade Consumidora</label>
+                <input type="text" value={selectedLead.consumer_unit} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contato Principal</label>
-                <input type="text" value={selectedLead.contato} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Período</label>
+                <input type="text" value={`${selectedLead.month} ${selectedLead.year}`} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Telefone</label>
-                <input type="text" value={selectedLead.telefone} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor da Energia (kWh)</label>
+                <input type="text" value={selectedLead.energy_value} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
-                <input type="email" value={selectedLead.email} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor da Fatura</label>
+                <input type="text" value={`R$ ${parseFloat(selectedLead.invoice_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Observações</label>
+                <textarea value={selectedLead.observations || ''} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" rows={3} />
               </div>
             </div>
           </div>

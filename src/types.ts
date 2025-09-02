@@ -42,3 +42,12 @@ export type DealComissao = {
   statusPagamento: 'pago' | 'pendente' | 'processando';
   data: string;
 };
+
+export type User = {
+  id: string;
+  email: string;
+  name: string;
+  surname: string;
+  client_id: string | null;
+  created_at: string;
+};

@@ -6,7 +6,7 @@ import {
   // Calendar,
   // FileText,
   // DollarSign,
-  // User,
+  User,
   Bell,
   HelpCircle,
   LogOut,
@@ -14,7 +14,8 @@ import {
   X,
   GraduationCap,
 } from 'lucide-react';
-import { mockUser } from '../data/mockData';
+import { User as UserType } from '../types';
+
 
 const navigation = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
@@ -22,7 +23,7 @@ const navigation = [
   // { to: '/agenda', label: 'Agenda', icon: Calendar },
   // { to: '/proposals', label: 'Propostas', icon: FileText },
   // { to: '/commissions', label: 'Comissões', icon: DollarSign },
-  // { to: '/profile', label: 'Perfil', icon: User },
+  { to: '/profile', label: 'Perfil', icon: User },
   { to: '/training', label: 'Treinamento para Consultor', icon: GraduationCap },
   // { to: '/notifications', label: 'Notificações', icon: Bell },
   { to: '/help', label: 'Ajuda', icon: HelpCircle },
@@ -32,9 +33,10 @@ interface LayoutProps {
   onLogout: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  user: UserType | null;
 }
 
-export default function Layout({ onLogout, theme, toggleTheme }: LayoutProps) {
+export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [logoError, setLogoError] = useState(false);
@@ -50,7 +52,7 @@ export default function Layout({ onLogout, theme, toggleTheme }: LayoutProps) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const user = mockUser;
+
 
   const handleLogout = () => {
     onLogout();
@@ -115,11 +117,11 @@ export default function Layout({ onLogout, theme, toggleTheme }: LayoutProps) {
                 aria-hidden
               >
                 <span className="text-white text-sm font-medium">
-                  {user.name.split(' ').map((n) => n[0]).join('')}
+                  {user ? `${user.name[0]}${user.surname[0]}` : 'U'}
                 </span>
               </div>
               <span className="hidden sm:block text-sm font-medium text-white">
-                {user.name}
+                {user ? `${user.name} ${user.surname}` : 'Usuário'}
               </span>
             </div>
             <button

@@ -1,9 +1,12 @@
 import React from 'react';
 import { Edit, ArrowRight } from 'lucide-react';
-import { mockUser } from '../data/mockData';
+import { User } from '../types';
 
-export default function ProfilePage() {
-  const user = mockUser;
+interface ProfilePageProps {
+  user: User | null;
+}
+
+export default function ProfilePage({ user }: ProfilePageProps) {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Perfil</h1>
@@ -18,7 +21,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nome Completo</label>
-            <input type="text" value={user.name} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+            <input type="text" value={user ? `${user.name} ${user.surname}` : ''} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CPF</label>
@@ -26,7 +29,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
-            <input type="email" value={user.email} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
+            <input type="email" value={user ? user.email : ''} readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg bg-gray-50 dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Telefone</label>

@@ -20,6 +20,7 @@ import {
 import ModalUploadInvoice from '../components/ModalUploadInvoice';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { mockLeads, mockPropostas } from '../data/mockData';
 import { toast } from 'sonner';
 import { Lead } from '../types';
@@ -178,7 +179,11 @@ export default function LeadsPage() {
           </header>
 
           <div className="bg-white dark:bg-[#3E3E3E] rounded-lg shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
-            {filteredLeads.length === 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : filteredLeads.length === 0 ? (
               <EmptyState
                 message="Você ainda não possui leads. Importe um arquivo ou cadastre manualmente."
                 action={

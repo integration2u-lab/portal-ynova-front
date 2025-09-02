@@ -7,18 +7,19 @@ import LeadsPage from './pages/LeadsPage';
 // import AgendaPage from './pages/AgendaPage';
 // import ProposalsPage from './pages/ProposalsPage';
 // import CommissionsPage from './pages/CommissionsPage';
-// import ProfilePage from './pages/ProfilePage';
+import ProfilePage from './pages/ProfilePage';
 // import NotificationsPage from './pages/NotificationsPage';
 import HelpPage from './pages/HelpPage';
 import LoginPage from './pages/LoginPage';
 import TrainingPage from './pages/TrainingPage';
 import { apiRequest } from './utils/api';
+import { User } from './types';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
@@ -94,14 +95,14 @@ export default function App() {
     <Routes>
       {isAuthenticated ? (
         <>
-          <Route path="/" element={<Layout onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />}> 
+          <Route path="/" element={<Layout onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} user={user} />}> 
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="leads" element={<LeadsPage />} />
             {/* <Route path="agenda" element={<AgendaPage />} /> */}
             {/* <Route path="proposals" element={<ProposalsPage />} /> */}
             {/* <Route path="commissions" element={<CommissionsPage />} /> */}
-            {/* <Route path="profile" element={<ProfilePage />} /> */}
+            <Route path="profile" element={<ProfilePage user={user} />} />
             <Route path="training" element={<TrainingPage />} />
             {/* <Route path="notifications" element={<NotificationsPage />} /> */}
             <Route path="help" element={<HelpPage />} />

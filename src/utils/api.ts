@@ -33,3 +33,23 @@ export const apiRequestWithAuth = async (
 
   return apiRequest(endpoint, authOptions);
 };
+
+// User API functions
+export const updateUserProfile = async (userId: string, userData: {
+  name?: string;
+  surname?: string;
+  email?: string;
+  phone?: string | null;
+}) => {
+  const response = await apiRequestWithAuth(`/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to update user profile');
+  }
+
+  return response.json();
+};

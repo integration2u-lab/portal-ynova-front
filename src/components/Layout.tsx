@@ -3,9 +3,9 @@ import { Outlet, NavLink } from 'react-router-dom';
 import {
   Home,
   UserCheck,
-  // Calendar,
-  // FileText,
-  // DollarSign,
+  Calendar,
+  FileText,
+  DollarSign,
   User,
   Bell,
   HelpCircle,
@@ -13,19 +13,22 @@ import {
   Menu,
   X,
   GraduationCap,
+  Handshake,
 } from 'lucide-react';
+import CrownIcon from './icons/CrownIcon';
 import { User as UserType } from '../types';
-
 
 const navigation = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
-  { to: '/leads', label: 'Leads', icon: UserCheck },
-  // { to: '/agenda', label: 'Agenda', icon: Calendar },
-  // { to: '/proposals', label: 'Propostas', icon: FileText },
-  // { to: '/commissions', label: 'Comissões', icon: DollarSign },
+  //Verificar com Breno { to: '/leads', label: 'Leads', icon: UserCheck },
+  { to: '/negociacoes', label: 'Negociações', icon: Handshake },
+  { to: '/agenda', label: 'Agenda', icon: Calendar },
+  { to: '/proposals', label: 'Propostas', icon: FileText },
+  //{ to: '/commissions', label: 'Comissões', icon: DollarSign },
   { to: '/profile', label: 'Perfil', icon: User },
+  { to: '/ranking', label: 'Ranking', icon: CrownIcon },
   { to: '/training', label: 'Treinamento para Consultor', icon: GraduationCap },
-  // { to: '/notifications', label: 'Notificações', icon: Bell },
+  { to: '/notifications', label: 'Notificações', icon: Bell },
   { to: '/help', label: 'Ajuda', icon: HelpCircle },
 ];
 

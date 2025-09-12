@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import { useTheme } from './hooks/useTheme';
 import DashboardPage from './pages/DashboardPage';
 import LeadsPage from './pages/LeadsPage';
-// import AgendaPage from './pages/AgendaPage';
-// import ProposalsPage from './pages/ProposalsPage';
-// import CommissionsPage from './pages/CommissionsPage';
+import AgendaPage from './pages/AgendaPage';
+import ProposalsPage from './pages/ProposalsPage';
+import CommissionsPage from './pages/CommissionsPage';
 import ProfilePage from './pages/ProfilePage';
-// import NotificationsPage from './pages/NotificationsPage';
+import RankingPage from "./pages/RankingPage"; // ajuste o caminho conforme sua estrutura
+import NotificationsPage from './pages/NotificationsPage';
 import HelpPage from './pages/HelpPage';
 import LoginPage from './pages/LoginPage';
 import TrainingPage from './pages/TrainingPage';
 import { apiRequest } from './utils/api';
 import { User } from './types';
+const Negociacoes = lazy(() => import('./pages/Negociacoes'));
+
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -99,13 +102,22 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="leads" element={<LeadsPage />} />
-            {/* <Route path="agenda" element={<AgendaPage />} /> */}
-            {/* <Route path="proposals" element={<ProposalsPage />} /> */}
-            {/* <Route path="commissions" element={<CommissionsPage />} /> */}
+            <Route path="agenda" element={<AgendaPage />} /> 
+            <Route path="proposals" element={<ProposalsPage />} /> 
+            <Route path="commissions" element={<CommissionsPage />} /> 
             <Route path="profile" element={<ProfilePage user={user} />} />
+            <Route path="ranking" element={<RankingPage />} />
             <Route path="training" element={<TrainingPage />} />
-            {/* <Route path="notifications" element={<NotificationsPage />} /> */}
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="help" element={<HelpPage />} />
+            <Route
+              path="negociacoes"
+              element={
+                <Suspense fallback={null}>
+                  <Negociacoes />
+                </Suspense>
+              }
+            />
           </Route>
           <Route path="/login" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

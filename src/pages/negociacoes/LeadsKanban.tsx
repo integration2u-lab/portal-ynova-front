@@ -1,5 +1,13 @@
 import { useState, useMemo } from "react";
-import { User, Building2, Calendar, Phone, Mail } from "lucide-react";
+import {
+  User,
+  Building2,
+  Calendar,
+  Phone,
+  Mail,
+  X,
+  Plus,
+} from "lucide-react";
 
 interface Lead {
   id: number;
@@ -19,7 +27,7 @@ const formatCurrency = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function LeadsKanban() {
-  const [leads] = useState<Lead[]>([
+  const [leads, setLeads] = useState<Lead[]>([
     {
       id: 1,
       empresa: "Empresa Alpha Ltda",
@@ -86,6 +94,51 @@ export default function LeadsKanban() {
       status: "negociacao",
     },
   ]);
+
+const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addStage, setAddStage] = useState<Lead["status"]>("novo");
+  const [newLead, setNewLead] = useState<Omit<Lead, "id" | "status">>({
+    empresa: "",
+    contato: "",
+    cnpj: "",
+    segmento: "",
+    telefone: "",
+    email: "",
+    valorPotencial: 0,
+    dataContato: "",
+    origem: "",
+  });
+
+  const openAddModal = (stage: Lead["status"]) => {
+    setAddStage(stage);
+    setNewLead({
+      empresa: "",
+      contato: "",
+      cnpj: "",
+      segmento: "",
+      telefone: "",
+      email: "",
+      valorPotencial: 0,
+      dataContato: "",
+      origem: "",
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const closeAddModal = () => setIsAddModalOpen(false);
+
+  const handleAddLead = () => {
+    const nextId = Math.max(0, ...leads.map((l) => l.id)) + 1;
+    setLeads((prev) => [
+      ...prev,
+      {
+        id: nextId,
+        ...newLead,
+        status: addStage,
+      },
+    ]);
+    closeAddModal();
+  };
 
   const metrics = useMemo(() => {
     const totalLeads = leads.length;
@@ -175,7 +228,7 @@ export default function LeadsKanban() {
                   <LeadCard key={lead.id} lead={lead} />
                 ))}
                 <button
-                  onClick={() => {}}
+                    onClick={() => openAddModal(col.key)}
                   className="w-full rounded-md border-2 border-dashed border-gray-300 py-2 text-sm text-gray-600 hover:bg-white"
                 >
                   Adicionar lead
@@ -185,6 +238,185 @@ export default function LeadsKanban() {
           );
         })}
       </div>
+
+<button
+        onClick={() => openAddModal("novo")}
+        className="fixed right-6 bottom-6 z-40 rounded-full bg-blue-600 p-4 text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-blue-700"
+        title="Adicionar lead"
+      >
+        <Plus size={24} />
+      </button>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-800">Adicionar Lead</h2>
+              <button
+                onClick={closeAddModal}
+                className="text-gray-500 transition-colors hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Nome da Empresa
+                </label>
+                <input
+                  type="text"
+                  value={newLead.empresa}
+                  onChange={(e) =>
+                    setNewLead((p) => ({ ...p, empresa: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Contato
+                </label>
+                <input
+                  type="text"
+                  value={newLead.contato}
+                  onChange={(e) =>
+                    setNewLead((p) => ({ ...p, contato: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  CNPJ
+                </label>
+                <input
+                  type="text"
+                  value={newLead.cnpj}
+                  onChange={(e) =>
+                    setNewLead((p) => ({ ...p, cnpj: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Segmento
+                </label>
+                <input
+                  type="text"
+                  value={newLead.segmento}
+                  onChange={(e) =>
+                    setNewLead((p) => ({ ...p, segmento: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Número de telefone
+                </label>
+                <input
+                  type="tel"
+                  value={newLead.telefone}
+                  onChange={(e) =>
+                    setNewLead((p) => ({ ...p, telefone: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  E-mail
+                </label>
+                <input
+                  type="email"
+                  value={newLead.email}
+                  onChange={(e) =>
+                    setNewLead((p) => ({ ...p, email: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Valor Potencial
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-gray-500">R$</span>
+                  <input
+                    type="number"
+                    value={newLead.valorPotencial}
+                    onChange={(e) =>
+                      setNewLead((p) => ({
+                        ...p,
+                        valorPotencial: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 p-3 pl-10 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Data de Contato
+                </label>
+                <input
+                  type="date"
+                  value={newLead.dataContato}
+                  onChange={(e) =>
+                    setNewLead((p) => ({
+                      ...p,
+                      dataContato: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Origem
+                </label>
+                <select
+                  value={newLead.origem}
+                  onChange={(e) =>
+                    setNewLead((p) => ({ ...p, origem: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Selecione</option>
+                  <option value="Site">Site</option>
+                  <option value="LP">LP</option>
+                  <option value="Indicação">Indicação</option>
+                  <option value="Google Ads">Google Ads</option>
+                  <option value="Evento">Evento</option>
+                  <option value="LinkedIn">LinkedIn</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleAddLead}
+                className="rounded-lg bg-blue-500 px-6 py-2 font-semibold text-white transition-colors hover:bg-blue-600"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -204,9 +436,22 @@ function Metric({
   );
 }
 
-function LeadCard({ lead }: { lead: Lead }) {
+function LeadCard({
+  lead,
+  onDelete,
+}: {
+  lead: Lead;
+  onDelete: (id: number) => void;
+}) {
   return (
-    <div className="space-y-2 rounded-md bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+   <div className="relative space-y-2 rounded-md bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+      <button
+        onClick={() => onDelete(lead.id)}
+        className="absolute right-2 top-2 text-gray-400 hover:text-red-600"
+        aria-label="Apagar lead"
+      >
+        <X size={14} />
+      </button>
       <div className="font-semibold text-gray-900">{lead.empresa}</div>
       <div className="flex items-center gap-1 text-sm text-gray-600">
         <User size={14} className="text-gray-400" />

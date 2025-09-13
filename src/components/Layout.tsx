@@ -66,7 +66,7 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#111418] dark:text-gray-100">
       <header
         role="banner"
-        className="sticky top-0 z-50 h-16 bg-[#FE5200] text-white shadow-sm px-4 md:px-6"
+        className="sticky top-0 z-40 h-16 bg-[#FE5200] text-white shadow-sm px-4 md:px-6"
       >
         <div className="flex items-center justify-between h-full">
           <NavLink

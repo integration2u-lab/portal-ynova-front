@@ -269,8 +269,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                   type="text"
                   value={formData.consumer_unit}
                   onChange={(e) => handleInputChange('consumer_unit', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 ${
-                    errors.consumer_unit ? 'border-red-500' : 'border-gray-300 dark:border-[#1E1E1E]'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.consumer_unit ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
                   }`}
                   placeholder="Ex: 123456789"
                 />
@@ -290,8 +290,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                   type="text"
                   value={formData.client_name}
                   onChange={(e) => handleInputChange('client_name', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 ${
-                    errors.client_name ? 'border-red-500' : 'border-gray-300 dark:border-[#1E1E1E]'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.client_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
                   }`}
                   placeholder="Ex: Empresa ABC Ltda"
                 />
@@ -311,8 +311,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                   type="text"
                   value={formData.cnpj}
                   onChange={(e) => handleInputChange('cnpj', formatCNPJ(e.target.value))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 ${
-                    errors.cnpj ? 'border-red-500' : 'border-gray-300 dark:border-[#1E1E1E]'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.cnpj ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
                   }`}
                   placeholder="00.000.000/0000-00"
                   maxLength={18}
@@ -332,8 +332,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                 <select
                   value={formData.month}
                   onChange={(e) => handleInputChange('month', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 ${
-                    errors.month ? 'border-red-500' : 'border-gray-300 dark:border-[#1E1E1E]'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.month ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
                   }`}
                 >
                   <option value="">Selecione o mês</option>
@@ -366,8 +366,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                   type="number"
                   value={formData.year}
                   onChange={(e) => handleInputChange('year', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 ${
-                    errors.year ? 'border-red-500' : 'border-gray-300 dark:border-[#1E1E1E]'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.year ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
                   }`}
                   placeholder="2025"
                   min="2020"
@@ -390,8 +390,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                   step="0.01"
                   value={formData.energy_value}
                   onChange={(e) => handleInputChange('energy_value', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 ${
-                    errors.energy_value ? 'border-red-500' : 'border-gray-300 dark:border-[#1E1E1E]'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.energy_value ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
                   }`}
                   placeholder="0.00"
                   min="0"
@@ -413,8 +413,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                   step="0.01"
                   value={formData.invoice_amount}
                   onChange={(e) => handleInputChange('invoice_amount', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100 ${
-                    errors.invoice_amount ? 'border-red-500' : 'border-gray-300 dark:border-[#1E1E1E]'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.invoice_amount ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
                   }`}
                   placeholder="0.00"
                   min="0"
@@ -436,7 +436,7 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                 value={formData.observations}
                 onChange={(e) => handleInputChange('observations', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-[#1E1E1E] rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-[#3E3E3E] text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900"
                 placeholder="Observações adicionais sobre a fatura..."
               />
             </div>

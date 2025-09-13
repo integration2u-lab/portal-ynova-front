@@ -69,8 +69,8 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
         className="sticky top-0 z-50 h-16 bg-[#FE5200] text-white shadow-sm px-4 md:px-6"
       >
         <div className="flex items-center justify-between h-full">
-          <a
-            href="/dashboard"
+          <NavLink
+            to="/dashboard"
             aria-label="Ir para a página inicial"
             className="flex items-center gap-2"
           >
@@ -85,7 +85,7 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
                 onError={() => setLogoError(true)}
               />
             )}
-          </a>
+          </NavLink>
           <div className="flex items-center gap-4">
             <div className="relative" ref={notifRef}>
               <button

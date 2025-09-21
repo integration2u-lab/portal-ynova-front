@@ -20,10 +20,10 @@ export default function ProposalsPage() {
       <div className="bg-white dark:bg-[#1a1f24] rounded-lg shadow-sm border border-gray-200 dark:border-[#2b3238]">
         <div className="space-y-3 sm:hidden p-4">
           {mockPropostas.map((p) => {
-            const lead = mockLeads.find((l) => l.id === p.leadId);
+            const lead = mockLeads.find((l) => l.id === p.leadId.toString());
             return (
               <article key={p.id} className="rounded-lg border p-4 bg-white dark:bg-[#1a1f24]">
-                <div className="font-semibold truncate">{lead?.nome}</div>
+                <div className="font-semibold truncate">{lead?.name}</div>
                 <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <dt className="text-gray-500">Data</dt>
@@ -72,11 +72,11 @@ export default function ProposalsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-[#2b3238]">
                 {mockPropostas.map((p) => {
-                  const lead = mockLeads.find((l) => l.id === p.leadId);
+                  const lead = mockLeads.find((l) => l.id === p.leadId.toString());
                   return (
                     <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-[#1f252b]">
                       <td className="px-6 py-4 whitespace-normal break-words truncate text-sm font-medium text-gray-900 dark:text-gray-200">
-                        {lead?.nome}
+                        {lead?.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
                         {new Date(p.data).toLocaleDateString('pt-BR')}

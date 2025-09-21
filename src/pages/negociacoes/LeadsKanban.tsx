@@ -1,7 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useAddNegociacao } from "../../contexts/AddNegociacaoContext";
+import { useUser } from "../../contexts/UserContext";
+import { userService } from "../../services/userService";
+import { User } from "../../types";
 import {
-  User,
+  User as UserIcon,
   Building2,
   Calendar,
   Phone,
@@ -79,6 +82,9 @@ export default function LeadsKanban() {
   const [selectedLeadForInvoices, setSelectedLeadForInvoices] = useState<Lead | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [selectedConsultant, setSelectedConsultant] = useState('');
+  const [consultants, setConsultants] = useState<User[]>([]);
+  const { isAdmin } = useUser();
   const [newLead, setNewLead] = useState({
     consumer_unit: "",
     name: "",
@@ -120,10 +126,33 @@ export default function LeadsKanban() {
     })
   );
 
-  // Load leads on component mount
+  // Load leads on component mount and when consultant filter changes
   useEffect(() => {
     loadLeads();
-  }, []);
+  }, [selectedConsultant]);
+
+  // Load consultants for admin users
+  useEffect(() => {
+    console.log('useEffect triggered - isAdmin:', isAdmin);
+    if (isAdmin) {
+      console.log('Loading consultants for admin user...');
+      userService.getUsers({ role: 'consultant', limit: 100 })
+        .then(response => {
+          console.log('Consultants response:', response);
+          if (response.success) {
+            console.log('Setting consultants:', response.data.users);
+            setConsultants(response.data.users);
+          } else {
+            console.error('Failed to load consultants - response not successful');
+          }
+        })
+        .catch(error => {
+          console.error('Error loading consultants:', error);
+        });
+    } else {
+      console.log('User is not admin, skipping consultant loading');
+    }
+  }, [isAdmin]);
 
   // Sync global modal state with local modal state
   useEffect(() => {
@@ -137,7 +166,13 @@ export default function LeadsKanban() {
     try {
       setLoading(true);
       setError(null);
-      const response = await getLeads({ limit: 100 }); // Get more leads for kanban view
+      
+      const params: any = { limit: 100 }; // Get more leads for kanban view
+      if (selectedConsultant) {
+        params.userId = selectedConsultant;
+      }
+      
+      const response = await getLeads(params);
       if (response.success) {
         setLeads(response.data.leads);
       } else {
@@ -442,6 +477,27 @@ export default function LeadsKanban() {
           />
           <Metric title="Taxa de Conversão" value="25%" />
         </div>
+        
+        {/* Consultant Filter for Admin Users */}
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Consultor:
+            </label>
+            <select
+              value={selectedConsultant}
+              onChange={(e) => setSelectedConsultant(e.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="">Todos os consultores</option>
+              {consultants.map((consultant) => (
+                <option key={consultant.id} value={consultant.id}>
+                  {consultant.name} {consultant.surname}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Kanban Board */}

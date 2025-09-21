@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import { useTheme } from './hooks/useTheme';
 import { AddNegociacaoProvider } from './contexts/AddNegociacaoContext';
+import { UserProvider } from './contexts/UserContext';
 import DashboardPage from './pages/DashboardPage';
 import AgendaPage from './pages/AgendaPage';
 import ProposalsPage from './pages/ProposalsPage';
@@ -95,49 +96,51 @@ export default function App() {
   };
 
   return (
-    <AddNegociacaoProvider>
-      <Routes>
-        {isAuthenticated ? (
-          <>
-            <Route path="/" element={<Layout onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} user={user} />}> 
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="agenda" element={<AgendaPage />} /> 
-              <Route path="proposals" element={<ProposalsPage />} /> 
-              <Route path="commissions" element={<CommissionsPage />} /> 
-              <Route path="profile" element={<ProfilePage user={user} onUserUpdate={setUser} />} />
-              <Route path="ranking" element={<RankingPage />} />
-              <Route path="training" element={<TrainingPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="help" element={<HelpPage />} />
+    <UserProvider user={user}>
+      <AddNegociacaoProvider>
+        <Routes>
+          {isAuthenticated ? (
+            <>
+              <Route path="/" element={<Layout onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} user={user} />}> 
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="agenda" element={<AgendaPage />} /> 
+                <Route path="proposals" element={<ProposalsPage />} /> 
+                <Route path="commissions" element={<CommissionsPage />} /> 
+                <Route path="profile" element={<ProfilePage user={user} onUserUpdate={setUser} />} />
+                <Route path="ranking" element={<RankingPage />} />
+                <Route path="training" element={<TrainingPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="help" element={<HelpPage />} />
+                <Route
+                  path="negociacoes"
+                  element={
+                    <Suspense fallback={null}>
+                      <Negociacoes />
+                    </Suspense>
+                  }
+                />
+              </Route>
+              <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </>
+          ) : (
+            <>
               <Route
-                path="negociacoes"
+                path="/login"
                 element={
-                  <Suspense fallback={null}>
-                    <Negociacoes />
-                  </Suspense>
+                  <LoginPage
+                    onLogin={handleLogin}
+                    isLoading={isLoading}
+                    error={error}
+                  />
                 }
               />
-            </Route>
-            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </>
-        ) : (
-          <>
-            <Route
-              path="/login"
-              element={
-                <LoginPage
-                  onLogin={handleLogin}
-                  isLoading={isLoading}
-                  error={error}
-                />
-              }
-            />
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </>
-        )}
-      </Routes>
-    </AddNegociacaoProvider>
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </>
+          )}
+        </Routes>
+      </AddNegociacaoProvider>
+    </UserProvider>
   );
 }

@@ -64,6 +64,23 @@ export type DealComissao = {
   data: string;
 };
 
+export type Commission = {
+  id: string;
+  consultant_id: string;
+  reference_month: string;
+  gross_amount: string;
+  status: 'aguardando_nf' | 'aprovada' | 'paga';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  consultant?: {
+    id: string;
+    name: string;
+    surname: string;
+    email: string;
+  };
+};
+
 export type User = {
   id: string;
   email: string;

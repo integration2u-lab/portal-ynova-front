@@ -132,6 +132,7 @@ export const getLeads = async (params?: {
   status?: string;
   month?: string;
   year?: number;
+  userId?: string; // For admin users to filter by consultant
 }) => {
   const queryParams = new URLSearchParams();
   
@@ -141,6 +142,7 @@ export const getLeads = async (params?: {
   if (params?.status) queryParams.append('status', params.status);
   if (params?.month) queryParams.append('month', params.month);
   if (params?.year) queryParams.append('year', params.year.toString());
+  if (params?.userId) queryParams.append('userId', params.userId);
 
   const response = await apiRequestWithAuth(`/leads?${queryParams.toString()}`);
   

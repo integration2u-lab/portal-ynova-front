@@ -82,7 +82,7 @@ docker run -p 80:80 ynova-portal-frontend:prod
 
 2. **Build and tag image**:
    ```bash
-   docker build -t ynova-portal-frontend .
+   docker build --build-arg VITE_API_BASE_URL=https://api.ynovamarketplace.com/api -t ynova-portal-frontend .
    docker tag ynova-portal-frontend:latest 646057971790.dkr.ecr.us-east-2.amazonaws.com/ynova-portal-frontend:latest
    ```
 

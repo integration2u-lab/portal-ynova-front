@@ -49,6 +49,14 @@ export type User = {
   name: string;
   surname: string;
   phone: string | null;
+  photo_url: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip_code: string | null;
+  birth_date: string | null;
+  pix_key: string | null;
+  role: string;
   client_id: string | null;
   created_at: string;
 };

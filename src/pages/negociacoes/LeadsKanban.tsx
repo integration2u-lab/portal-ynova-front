@@ -196,12 +196,6 @@ const [isAddModalOpen, setIsAddModalOpen] = useState(false);
           />
           <Metric title="Taxa de Conversão" value="25%" />
         </div>
-        <button
-          onClick={() => {}}
-          className="whitespace-nowrap rounded-lg bg-[#FE5200] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#FE5200]/90"
-        >
-          Enviar Fatura
-        </button>
       </div>
 
       {/* Kanban Board */}
@@ -225,10 +219,10 @@ const [isAddModalOpen, setIsAddModalOpen] = useState(false);
               </div>
               <div className={`${col.body} flex flex-1 flex-col gap-3 p-3`}>
                 {items.map((lead) => (
-                  <LeadCard key={lead.id} lead={lead} />
+                  <LeadCard key={lead.id} lead={lead} onDelete={() => {}} />
                 ))}
                 <button
-                    onClick={() => openAddModal(col.key)}
+                  onClick={() => openAddModal(col.key)}
                   className="w-full rounded-md border-2 border-dashed border-gray-300 py-2 text-sm text-gray-600 hover:bg-white"
                 >
                   Adicionar lead

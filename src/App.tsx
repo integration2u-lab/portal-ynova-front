@@ -105,7 +105,7 @@ export default function App() {
             <Route path="agenda" element={<AgendaPage />} /> 
             <Route path="proposals" element={<ProposalsPage />} /> 
             <Route path="commissions" element={<CommissionsPage />} /> 
-            <Route path="profile" element={<ProfilePage user={user} />} />
+            <Route path="profile" element={<ProfilePage user={user} onUserUpdate={setUser} />} />
             <Route path="ranking" element={<RankingPage />} />
             <Route path="training" element={<TrainingPage />} />
             <Route path="notifications" element={<NotificationsPage />} />

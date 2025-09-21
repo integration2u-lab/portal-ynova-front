@@ -116,12 +116,29 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
             </label>
             <div className="flex items-center gap-2">
               <div
-                className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"
+                className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center overflow-hidden"
                 aria-hidden
               >
-                <span className="text-white text-sm font-medium">
-                  {user ? `${user.name[0]}${user.surname[0]}` : 'U'}
-                </span>
+                {user?.photo_url ? (
+                  <img
+                    src={user.photo_url}
+                    alt={`${user.name} ${user.surname}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to initials if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `<span class="text-white text-sm font-medium">${user.name[0]}${user.surname[0]}</span>`;
+                      }
+                    }}
+                  />
+                ) : (
+                  <span className="text-white text-sm font-medium">
+                    {user ? `${user.name[0]}${user.surname[0]}` : 'U'}
+                  </span>
+                )}
               </div>
               <span className="hidden sm:block text-sm font-medium text-white">
                 {user ? `${user.name} ${user.surname}` : 'Usuário'}

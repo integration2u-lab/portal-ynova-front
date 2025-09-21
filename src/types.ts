@@ -1,27 +1,48 @@
 export type Lead = {
   id: string;
   consumer_unit: string;
-  client_name: string;
+  name: string;
+  phone: string;
+  email: string;
   cnpj: string;
   month: string;
   year: number;
   energy_value: string;
   invoice_amount: string;
-  status: 'pending' | 'approved' | 'rejected' | 'processing';
-  file_url?: string;
-  file_key?: string;
-  file_name?: string;
+  status: 'novo' | 'qualificado' | 'proposta' | 'negociacao' | 'fechado';
   observations?: string;
-  user_id: string;
+  consultant_id?: string;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
-  user?: {
+  has_solar_generation?: boolean;
+  solar_generation_type?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  source?: string;
+  consultant?: {
     id: string;
     name: string;
     surname: string;
     email: string;
   };
+  lead_invoices?: LeadInvoice[];
+};
+
+export type LeadInvoice = {
+  id: string;
+  lead_id: string;
+  filename_original: string;
+  filename_normalized: string;
+  storage_url: string;
+  signed_url?: string;
+  invoice_amount: string;
+  extracted_data: any;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
 };
 
 export type Proposta = {

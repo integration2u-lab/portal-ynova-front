@@ -20,7 +20,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard title="Leads Ativos" value={mockKpis.leads_ativos} icon={UserCheck} color="blue" />
+        <KpiCard title="Negociações Ativas" value={mockKpis.leads_ativos} icon={UserCheck} color="blue" />
         <KpiCard title="Taxa de Conversão" value={`${mockKpis.taxa_conversao}%`} icon={TrendingUp} color="green" />
         <KpiCard title="Receita Potencial" value={`R$ ${(mockKpis.receita_potencial / 1000000).toFixed(1)}M`} icon={DollarSign} color="orange" />
         <KpiCard title="Propostas em Negociação" value={mockKpis.propostas_em_negociacao} icon={FileText} color="purple" />
@@ -38,8 +38,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex flex-wrap gap-4">
-        <button onClick={() => navigate('/leads')} className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto">
-          Ver Leads
+        <button onClick={() => navigate('/negociacoes')} className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto">
+          Ver Negociações
         </button>
         <button onClick={() => navigate('/agenda')} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto">
           Agendar Apresentação

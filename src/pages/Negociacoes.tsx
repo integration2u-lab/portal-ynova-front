@@ -12,7 +12,7 @@ export default function Negociacoes() {
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold text-gray-900 md:text-3xl">Negociações</h1>
         <p className="text-sm text-gray-500 md:text-base">
-          Central de acompanhamento de leads, comissões e metas
+          Central de acompanhamento de negociações, comissões e metas
         </p>
       </div>
 
@@ -22,7 +22,7 @@ export default function Negociacoes() {
           <nav className="flex gap-4 px-4">
             <TabBtn
               icon={Users}
-              label="Leads"
+              label="Negociações"
               active={tab === "leads"}
               onClick={() => setTab("leads")}
             />
@@ -86,7 +86,7 @@ function ComissoesSection() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar comissões..."
+            placeholder="Buscar negociações..."
             className="w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 py-2.5 text-sm outline-none placeholder:text-gray-400 focus:border-[#ff6b35] focus:ring-2 focus:ring-[#ff6b35]/20"
           />
         </label>

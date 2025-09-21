@@ -2,8 +2,8 @@ import React, { useState, useEffect,Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import { useTheme } from './hooks/useTheme';
+import { AddNegociacaoProvider } from './contexts/AddNegociacaoContext';
 import DashboardPage from './pages/DashboardPage';
-import LeadsPage from './pages/LeadsPage';
 import AgendaPage from './pages/AgendaPage';
 import ProposalsPage from './pages/ProposalsPage';
 import CommissionsPage from './pages/CommissionsPage';
@@ -95,48 +95,49 @@ export default function App() {
   };
 
   return (
-    <Routes>
-      {isAuthenticated ? (
-        <>
-          <Route path="/" element={<Layout onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} user={user} />}> 
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="leads" element={<LeadsPage />} />
-            <Route path="agenda" element={<AgendaPage />} /> 
-            <Route path="proposals" element={<ProposalsPage />} /> 
-            <Route path="commissions" element={<CommissionsPage />} /> 
-            <Route path="profile" element={<ProfilePage user={user} onUserUpdate={setUser} />} />
-            <Route path="ranking" element={<RankingPage />} />
-            <Route path="training" element={<TrainingPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="help" element={<HelpPage />} />
+    <AddNegociacaoProvider>
+      <Routes>
+        {isAuthenticated ? (
+          <>
+            <Route path="/" element={<Layout onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} user={user} />}> 
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="agenda" element={<AgendaPage />} /> 
+              <Route path="proposals" element={<ProposalsPage />} /> 
+              <Route path="commissions" element={<CommissionsPage />} /> 
+              <Route path="profile" element={<ProfilePage user={user} onUserUpdate={setUser} />} />
+              <Route path="ranking" element={<RankingPage />} />
+              <Route path="training" element={<TrainingPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="help" element={<HelpPage />} />
+              <Route
+                path="negociacoes"
+                element={
+                  <Suspense fallback={null}>
+                    <Negociacoes />
+                  </Suspense>
+                }
+              />
+            </Route>
+            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </>
+        ) : (
+          <>
             <Route
-              path="negociacoes"
+              path="/login"
               element={
-                <Suspense fallback={null}>
-                  <Negociacoes />
-                </Suspense>
+                <LoginPage
+                  onLogin={handleLogin}
+                  isLoading={isLoading}
+                  error={error}
+                />
               }
             />
-          </Route>
-          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </>
-      ) : (
-        <>
-          <Route
-            path="/login"
-            element={
-              <LoginPage
-                onLogin={handleLogin}
-                isLoading={isLoading}
-                error={error}
-              />
-            }
-          />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </>
-      )}
-    </Routes>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </>
+        )}
+      </Routes>
+    </AddNegociacaoProvider>
   );
 }

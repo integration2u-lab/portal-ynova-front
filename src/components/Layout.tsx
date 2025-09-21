@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useAddNegociacao } from '../contexts/AddNegociacaoContext';
 import {
   Home,
   UserCheck,
@@ -14,13 +15,13 @@ import {
   X,
   GraduationCap,
   Handshake,
+  Plus,
 } from 'lucide-react';
 import CrownIcon from './icons/CrownIcon';
 import { User as UserType } from '../types';
 
 const navigation = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
-  //Verificar com Breno { to: '/leads', label: 'Leads', icon: UserCheck },
   { to: '/negociacoes', label: 'Negociações', icon: Handshake },
   { to: '/agenda', label: 'Agenda', icon: Calendar },
   { to: '/proposals', label: 'Propostas', icon: FileText },
@@ -44,6 +45,9 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
   const [showNotifications, setShowNotifications] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { openModal } = useAddNegociacao();
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -60,6 +64,15 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
   const handleLogout = () => {
     onLogout();
     setIsMobileMenuOpen(false);
+  };
+
+  const handleAddNegociacao = () => {
+    // Navigate to negociacoes page first, then open modal
+    navigate('/negociacoes');
+    // Small delay to ensure page is loaded before opening modal
+    setTimeout(() => {
+      openModal('novo');
+    }, 100);
   };
 
   return (
@@ -87,11 +100,20 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
             )}
           </NavLink>
           <div className="flex items-center gap-4">
+            <button
+              className="p-2 rounded-md text-white hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+              aria-label="Adicionar negociação"
+              onClick={handleAddNegociacao}
+              title="Adicionar negociação"
+            >
+              <Plus size={20} />
+            </button>
             <div className="relative" ref={notifRef}>
               <button
                 className="p-2 rounded-md text-white hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                 aria-label="Notificações"
                 onClick={() => setShowNotifications((p) => !p)}
+                title="Notificações"
               >
                 <Bell size={20} />
               </button>

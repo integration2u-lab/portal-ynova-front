@@ -1036,16 +1036,16 @@ function SortableLeadCard({
         {...listeners}
         className="cursor-grab active:cursor-grabbing pr-8"
       >
-        <div className="font-semibold text-gray-900">{lead.name}</div>
-        <div className="flex items-center gap-1 text-sm text-gray-600">
+        <div className="font-semibold text-gray-900 mb-1">{lead.name}</div>
+        <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
           <Building2 size={14} className="text-gray-400" />
           {lead.consumer_unit}
         </div>
-        <div className="flex items-center gap-1 text-sm text-gray-600">
+        <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
           <Building2 size={14} className="text-gray-400" />
           {lead.cnpj}
         </div>
-        <div className="flex flex-wrap gap-2 text-xs">
+        <div className="flex flex-wrap gap-2 text-xs mb-2">
           <span className="rounded bg-gray-200 px-2 py-1 text-gray-700">
             {lead.month} {lead.year}
           </span>
@@ -1055,14 +1055,14 @@ function SortableLeadCard({
             </span>
           ))}
         </div>
-        <div className="text-sm font-semibold text-green-600">
+        <div className="text-sm font-semibold text-green-600 mb-1">
           {formatCurrency(parseFloat(lead.invoice_amount))}
         </div>
-        <div className="flex items-center gap-1 text-xs text-gray-500">
+        <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
           <Calendar size={14} className="text-gray-400" />
           {new Date(lead.created_at).toLocaleDateString("pt-BR")}
         </div>
-        <div className="flex items-center justify-between pt-1">
+        <div className="flex items-center justify-between pt-1 mb-1">
           <div className="flex gap-2">
             <a
               href={`tel:${lead.phone}`}
@@ -1077,14 +1077,23 @@ function SortableLeadCard({
               <Mail size={16} />
             </a>
           </div>
-          {lead.lead_invoices && lead.lead_invoices.length > 0 && (
-            <div className="flex items-center gap-1 text-xs text-blue-600">
-              <FileText size={12} />
-              <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
-            </div>
-          )}
         </div>
       </div>
+      
+      {/* FileText info - outside draggable area */}
+      {lead.lead_invoices && lead.lead_invoices.length > 0 && (
+        <div 
+          className="flex items-center gap-1 text-xs text-blue-600 cursor-pointer hover:text-blue-800 transition-colors mt-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenInvoices(lead);
+          }}
+          title="Ver faturas"
+        >
+          <FileText size={12} />
+          <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -1122,16 +1131,16 @@ function LeadCard({
           <X size={14} />
         </button>
       </div>
-      <div className="font-semibold text-gray-900">{lead.name}</div>
-      <div className="flex items-center gap-1 text-sm text-gray-600">
+      <div className="font-semibold text-gray-900 mb-1">{lead.name}</div>
+      <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
         <Building2 size={14} className="text-gray-400" />
         {lead.consumer_unit}
       </div>
-      <div className="flex items-center gap-1 text-sm text-gray-600">
+      <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
         <Building2 size={14} className="text-gray-400" />
         {lead.cnpj}
       </div>
-      <div className="flex flex-wrap gap-2 text-xs">
+      <div className="flex flex-wrap gap-2 text-xs mb-2">
         <span className="rounded bg-gray-200 px-2 py-1 text-gray-700">
           {lead.month} {lead.year}
         </span>
@@ -1141,14 +1150,14 @@ function LeadCard({
           </span>
         ))}
       </div>
-      <div className="text-sm font-semibold text-green-600">
+      <div className="text-sm font-semibold text-green-600 mb-1">
         {formatCurrency(parseFloat(lead.invoice_amount))}
       </div>
-      <div className="flex items-center gap-1 text-xs text-gray-500">
+      <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
         <Calendar size={14} className="text-gray-400" />
         {new Date(lead.created_at).toLocaleDateString("pt-BR")}
       </div>
-      <div className="flex items-center justify-between pt-1">
+      <div className="flex items-center justify-between pt-1 mb-1">
         <div className="flex gap-2">
           <a
             href={`tel:${lead.phone}`}
@@ -1163,13 +1172,22 @@ function LeadCard({
             <Mail size={16} />
           </a>
         </div>
-        {lead.lead_invoices && lead.lead_invoices.length > 0 && (
-          <div className="flex items-center gap-1 text-xs text-blue-600">
-            <FileText size={12} />
-            <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
-          </div>
-        )}
       </div>
+      
+      {/* FileText info - separate from main content */}
+      {lead.lead_invoices && lead.lead_invoices.length > 0 && (
+        <div 
+          className="flex items-center gap-1 text-xs text-blue-600 cursor-pointer hover:text-blue-800 transition-colors mt-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenInvoices(lead);
+          }}
+          title="Ver faturas"
+        >
+          <FileText size={12} />
+          <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -59,6 +59,7 @@ export const commissionService = {
     gross_amount: number;
     notes?: string;
     status?: string;
+    consultant_id?: string; // For admin users to create commissions for specific consultants
   }): Promise<{ success: boolean; data: Commission }> {
     const response = await apiRequestWithAuth('/commissions', {
       method: 'POST',

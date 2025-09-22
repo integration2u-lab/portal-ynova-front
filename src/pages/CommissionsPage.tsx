@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, CheckCircle, Clock, TrendingUp, RefreshCw } from 'lucide-react';
+import { DollarSign, CheckCircle, Clock, TrendingUp, RefreshCw, Plus } from 'lucide-react';
 import KpiCard from '../components/KpiCard';
+import CommissionModal from '../components/CommissionModal';
 import { useCommissions } from '../hooks/useCommissions';
 import { useUser } from '../contexts/UserContext';
 import { userService } from '../services/userService';
@@ -11,7 +12,13 @@ export default function CommissionsPage() {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState('');
   const [consultants, setConsultants] = useState<User[]>([]);
-  const { isAdmin } = useUser();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { isAdmin, user } = useUser();
+
+  // Debug logging
+  console.log('CommissionsPage - user:', user);
+  console.log('CommissionsPage - isAdmin:', isAdmin);
+  console.log('CommissionsPage - user role:', user?.role);
   const { 
     commissions, 
     loading, 
@@ -61,6 +68,10 @@ export default function CommissionsPage() {
     console.log('Export CSV functionality not implemented yet');
   };
 
+  const handleCommissionCreated = () => {
+    refetch(); // Refresh the commissions list
+  };
+
   // Load consultants for admin users
   useEffect(() => {
     console.log('CommissionsPage useEffect triggered - isAdmin:', isAdmin);
@@ -105,14 +116,32 @@ export default function CommissionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Comissões & Performance</h1>
-        <button
-          onClick={refetch}
-          disabled={loading}
-          className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg text-sm"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </button>
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm"
+            >
+              <Plus className="h-4 w-4" />
+              Lançar
+            </button>
+          )}
+          {/* Debug: Always show a test button to verify rendering */}
+          <button
+            onClick={() => console.log('Test button clicked - isAdmin:', isAdmin, 'user role:', user?.role)}
+            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            Debug
+          </button>
+          <button
+            onClick={refetch}
+            disabled={loading}
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+        </div>
       </div>
 
       <header className="flex flex-col gap-3">
@@ -341,6 +370,15 @@ export default function CommissionsPage() {
           </>
         )}
       </div>
+
+      {/* Commission Modal for Admin Users */}
+      {isAdmin && (
+        <CommissionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handleCommissionCreated}
+        />
+      )}
     </div>
   );
 }

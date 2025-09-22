@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Search, Filter, Users, TrendingUp, Trophy } from "lucide-react";
+import { Search, Filter, Users, TrendingUp, Trophy, Plus } from "lucide-react";
 import { ProgressoDeMetas } from "./ProgressoMetas";
 import LeadsKanban from "./negociacoes/LeadsKanban";
+import CommissionModal from "../components/CommissionModal";
 import { useCommissions } from "../hooks/useCommissions";
 import { useUser } from "../contexts/UserContext";
 import { userService } from "../services/userService";
@@ -86,7 +87,13 @@ function ComissoesSection() {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedConsultant, setSelectedConsultant] = useState("");
   const [consultants, setConsultants] = useState<User[]>([]);
-  const { isAdmin } = useUser();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { isAdmin, user } = useUser();
+
+  // Debug logging
+  console.log('ComissoesSection - user:', user);
+  console.log('ComissoesSection - isAdmin:', isAdmin);
+  console.log('ComissoesSection - user role:', user?.role);
   
   const { 
     commissions, 
@@ -120,6 +127,10 @@ function ComissoesSection() {
   const handleConsultantChange = (consultantId: string) => {
     setSelectedConsultant(consultantId);
     updateFilters({ userId: consultantId || undefined });
+  };
+
+  const handleCommissionCreated = () => {
+    refetch(); // Refresh the commissions list
   };
 
   // Load consultants for admin users
@@ -194,6 +205,16 @@ function ComissoesSection() {
           </select>
         )}
 
+        {isAdmin && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white px-4 py-2.5 text-sm font-medium transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Lançar
+          </button>
+        )}
+
         <button 
           onClick={refetch}
           disabled={loading}
@@ -264,7 +285,7 @@ function ComissoesSection() {
                   <Td>{new Date(commission.created_at).toLocaleDateString('pt-BR')}</Td>
                   <Td>
                     <div className="flex gap-2">
-                      <BtnLink color="brand">Detalhes</BtnLink>
+                      <BtnLink color="brand">Detalhes (Em breve)</BtnLink>
                     </div>
                   </Td>
                 </tr>
@@ -272,6 +293,15 @@ function ComissoesSection() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Commission Modal for Admin Users */}
+      {isAdmin && (
+        <CommissionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handleCommissionCreated}
+        />
       )}
     </div>
   );

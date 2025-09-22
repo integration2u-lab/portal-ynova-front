@@ -19,8 +19,10 @@ export function UserProvider({ user, children }: UserProviderProps) {
   const isConsultant = user?.role === 'consultant';
 
   console.log('UserContext - user:', user);
+  console.log('UserContext - user role:', user?.role);
   console.log('UserContext - isAdmin:', isAdmin);
   console.log('UserContext - isConsultant:', isConsultant);
+  console.log('UserContext - role comparison:', user?.role === 'admin');
 
   const value = {
     user,

@@ -4,7 +4,7 @@ interface KpiCardProps {
   title: string;
   value: string | number;
   icon: React.ComponentType<{ size?: number; className?: string }>;
-  color?: 'blue' | 'orange' | 'green' | 'purple';
+  color?: 'blue' | 'orange' | 'green' | 'purple' | 'indigo' | 'teal' | 'red';
 }
 
 export default function KpiCard({ title, value, icon: Icon, color = 'blue' }: KpiCardProps) {
@@ -13,6 +13,9 @@ export default function KpiCard({ title, value, icon: Icon, color = 'blue' }: Kp
     orange: 'bg-[#FE5200]/10 text-[#FE5200]',
     green: 'bg-green-50 text-green-600',
     purple: 'bg-purple-50 text-purple-600',
+    indigo: 'bg-indigo-50 text-indigo-600',
+    teal: 'bg-teal-50 text-teal-600',
+    red: 'bg-red-50 text-red-600',
   } as const;
 
   return (

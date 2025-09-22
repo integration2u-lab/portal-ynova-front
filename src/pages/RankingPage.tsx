@@ -55,7 +55,7 @@ const RankingPage: React.FC = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {/* Título da página */}
         <div className="mb-6">
-          <h1 className="text-[28px] md:text-[32px] font-extrabold text-gray-900">
+          <h1 className="text-2xl font-extrabold text-gray-900 md:text-3xl dark:text-gray-100">
             Ranking de Consultores <span className="text-gray-400">(Anônimo)</span>
           </h1>
         </div>

@@ -9,7 +9,7 @@ export type Lead = {
   year: number;
   energy_value: string;
   invoice_amount: string;
-  status: 'novo' | 'qualificado' | 'proposta' | 'negociacao' | 'fechado';
+  status: string; // Flexible status - can be any string value
   observations?: string;
   consultant_id?: string;
   created_at: string;

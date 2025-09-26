@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Search, Filter, Users, TrendingUp, Trophy, Plus } from "lucide-react";
 import { ProgressoDeMetas } from "./ProgressoMetas";
 import LeadsKanban from "./negociacoes/LeadsKanban";
+import PipelineStatus from "./negociacoes/PipelineStatus";
 import CommissionModal from "../components/CommissionModal";
 import { useCommissions } from "../hooks/useCommissions";
 import { useUser } from "../contexts/UserContext";
@@ -9,7 +10,7 @@ import { userService } from "../services/userService";
 import { User } from "../types";
 
 export default function Negociacoes() {
-  const [tab, setTab] = useState<"leads" | "comissoes" | "metas">("leads");
+  const [tab, setTab] = useState<"leads" | "pipeline" | "comissoes" | "metas">("leads");
 
   return (
     <div className="mx-auto w-full max-w-[1200px]">
@@ -32,6 +33,12 @@ export default function Negociacoes() {
               onClick={() => setTab("leads")}
             />
             <TabBtn
+              icon={Filter}
+              label="Status da Pipeline"
+              active={tab === "pipeline"}
+              onClick={() => setTab("pipeline")}
+            />
+            <TabBtn
               icon={TrendingUp}
               label="Comissões"
               active={tab === "comissoes"}
@@ -48,6 +55,7 @@ export default function Negociacoes() {
 
         <div className="p-4 md:p-6">
           {tab === "leads" && <LeadsKanban />}
+          {tab === "pipeline" && <PipelineStatus />}
           {tab === "comissoes" && <ComissoesSection />}
           {tab === "metas" && <ProgressoDeMetas fechamentosAtuais={36} />}
         </div>

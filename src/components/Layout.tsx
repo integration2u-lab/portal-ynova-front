@@ -23,13 +23,13 @@ import { User as UserType } from '../types';
 const navigation = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/negociacoes', label: 'Negociações', icon: Handshake },
-  { to: '/agenda', label: 'Agenda', icon: Calendar },
-  { to: '/proposals', label: 'Propostas', icon: FileText },
+  // { to: '/agenda', label: 'Agenda', icon: Calendar },
+  // { to: '/proposals', label: 'Propostas', icon: FileText },
+  // { to: '/notifications', label: 'Notificações', icon: Bell },
   //{ to: '/commissions', label: 'Comissões', icon: DollarSign },
   { to: '/profile', label: 'Perfil', icon: User },
   { to: '/ranking', label: 'Ranking', icon: CrownIcon },
   { to: '/training', label: 'Treinamento para Consultor', icon: GraduationCap },
-  { to: '/notifications', label: 'Notificações', icon: Bell },
   { to: '/help', label: 'Ajuda', icon: HelpCircle },
 ];
 

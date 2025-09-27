@@ -16,6 +16,7 @@ import LoginPage from './pages/LoginPage';
 import TrainingPage from './pages/TrainingPage';
 import { apiRequest } from './utils/api';
 import { User } from './types';
+import Negociacoes from './pages/Negociacoes';
 // const Negociacoes = lazy(() => import('./pages/Negociacoes'));
 
 
@@ -170,6 +171,7 @@ export default function App() {
               <Route path="/" element={<Layout onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} user={user} />}> 
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="negociacoes" element={<Negociacoes />} />
                 {/* <Route path="agenda" element={<AgendaPage />} /> */}
                 {/* <Route path="proposals" element={<ProposalsPage />} /> */}
                 <Route path="commissions" element={<CommissionsPage />} /> 

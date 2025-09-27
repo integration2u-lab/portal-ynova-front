@@ -14,8 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { Lead } from '../../types'
-
-const YNOVA_LEADS_ENDPOINT = 'https://api.ynovamarketplace.com/api/leads'
+import { getLeads } from '../../utils/api'
 
 const stageColors = [
   'from-orange-500 to-orange-400',
@@ -412,31 +411,16 @@ export default function PipelineStatus() {
       setLoading(true)
       setError(null)
 
-      const token = localStorage.getItem('token')
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado. Faça login novamente.')
-      }
-
-      const response = await fetch(YNOVA_LEADS_ENDPOINT, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (!response.ok) {
+      const response = await getLeads({ limit: 500 })
+      if (!response?.success) {
         throw new Error('Não foi possível carregar os leads da pipeline.')
       }
 
-      const json = await response.json()
-      const leadsData = Array.isArray(json)
-        ? json
-        : Array.isArray(json?.data?.leads)
-          ? json.data.leads
-          : Array.isArray(json?.data)
-            ? json.data
-            : Array.isArray(json?.leads)
-              ? json.leads
-              : []
+      const leadsData = Array.isArray(response?.data?.leads)
+        ? response.data.leads
+        : Array.isArray(response?.data)
+          ? response.data
+          : []
 
       if (!Array.isArray(leadsData)) {
         throw new Error('Formato inesperado de resposta ao carregar os leads.')

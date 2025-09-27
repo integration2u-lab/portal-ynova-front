@@ -142,6 +142,97 @@ const getBadgeClassForStage = (stageName: string) => {
   return definition?.badgeClass ?? 'bg-gray-100 text-gray-600'
 }
 
+const extractLeadsFromResponse = (response: any): any[] => {
+  if (Array.isArray(response?.data?.leads)) {
+    return response.data.leads
+  }
+
+  if (Array.isArray(response?.data?.data)) {
+    return response.data.data
+  }
+
+  if (Array.isArray(response?.data)) {
+    return response.data
+  }
+
+  if (Array.isArray(response?.leads)) {
+    return response.leads
+  }
+
+  if (Array.isArray(response)) {
+    return response
+  }
+
+  return []
+}
+
+const shouldFetchNextPage = (
+  page: number,
+  leadsFetched: number,
+  limit: number,
+  aggregateCount: number,
+  pagination?: any
+) => {
+  if (pagination) {
+    const currentPage = Number(pagination.current_page ?? pagination.currentPage)
+    const lastPage = Number(pagination.last_page ?? pagination.lastPage)
+    const totalPages = Number(
+      pagination.total_pages ?? pagination.totalPages ?? pagination.pages
+    )
+    const totalItems = Number(
+      pagination.total ?? pagination.total_items ?? pagination.totalItems ?? pagination.count
+    )
+
+    if (Number.isFinite(currentPage) && Number.isFinite(lastPage)) {
+      return currentPage < lastPage
+    }
+
+    if (Number.isFinite(totalPages)) {
+      return page < totalPages
+    }
+
+    if (Number.isFinite(totalItems)) {
+      return aggregateCount < totalItems
+    }
+  }
+
+  return leadsFetched >= limit
+}
+
+const fetchAllLeads = async () => {
+  const aggregatedLeads: any[] = []
+  const limitPerPage = 100
+  const MAX_PAGES = 100
+
+  for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const response = await getLeads({ page, limit: limitPerPage })
+
+    if (response?.success === false) {
+      throw new Error(response?.message || 'Não foi possível carregar os leads da pipeline.')
+    }
+
+    const leadsData = extractLeadsFromResponse(response)
+
+    if (!Array.isArray(leadsData)) {
+      break
+    }
+
+    aggregatedLeads.push(...leadsData)
+
+    const pagination =
+      response?.data?.meta ??
+      response?.data?.pagination ??
+      response?.meta ??
+      response?.pagination
+
+    if (!shouldFetchNextPage(page, leadsData.length, limitPerPage, aggregatedLeads.length, pagination)) {
+      break
+    }
+  }
+
+  return aggregatedLeads
+}
+
 const parsePeriodToMonthYear = (period?: string | null, fallbackDate?: string | null) => {
   if (period) {
     const sanitized = period.toString().trim()
@@ -411,16 +502,7 @@ export default function PipelineStatus() {
       setLoading(true)
       setError(null)
 
-      const response = await getLeads({ limit: 500 })
-      if (!response?.success) {
-        throw new Error('Não foi possível carregar os leads da pipeline.')
-      }
-
-      const leadsData = Array.isArray(response?.data?.leads)
-        ? response.data.leads
-        : Array.isArray(response?.data)
-          ? response.data
-          : []
+      const leadsData = await fetchAllLeads()
 
       if (!Array.isArray(leadsData)) {
         throw new Error('Formato inesperado de resposta ao carregar os leads.')

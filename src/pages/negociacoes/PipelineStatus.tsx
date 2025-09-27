@@ -13,34 +13,72 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react'
-import { pipelineService, type PipelineStage } from '../../services/pipelineService'
 import type { Lead } from '../../types'
-import { getLeads } from '../../utils/api'
+
+const YNOVA_LEADS_ENDPOINT = 'https://api.ynovamarketplace.com/api/leads'
 
 const stageColors = [
   'from-orange-500 to-orange-400',
   'from-sky-500 to-sky-400',
   'from-purple-500 to-purple-400',
   'from-amber-500 to-amber-400',
+  'from-indigo-500 to-indigo-400',
   'from-emerald-500 to-emerald-400',
-  'from-rose-500 to-rose-400'
+  'from-rose-500 to-rose-400',
 ]
 
-const stageNameStatusMap: Record<string, string[]> = {
-  prospeccao: ['novo', 'prospeccao', 'prospecting'],
-  qualificacao: ['qualificado', 'qualificacao', 'qualification'],
-  'proposta enviada': ['proposta', 'proposta enviada', 'proposal'],
-  negociacao: ['negociacao', 'negotiacao', 'negotiation'],
-  'fechado ganho': ['fechado', 'fechado ganho', 'ganho', 'won', 'fechado_ganho'],
-  'fechado perdido': ['perdido', 'fechado perdido', 'lost', 'fechado_perdido'],
-}
+const stageDefinitions = [
+  {
+    key: 'prospeccao',
+    label: 'Prospecção',
+    badgeClass: 'bg-sky-100 text-sky-700',
+    statuses: ['appointmentscheduled', 'novo', 'prospeccao', 'prospecting'],
+  },
+  {
+    key: 'qualificacao',
+    label: 'Qualificação',
+    badgeClass: 'bg-purple-100 text-purple-700',
+    statuses: ['qualifiedtobuy', 'qualificado', 'qualificacao', 'qualification'],
+  },
+  {
+    key: 'proposta enviada',
+    label: 'Proposta Enviada',
+    badgeClass: 'bg-amber-100 text-amber-700',
+    statuses: ['presentationscheduled', 'proposta', 'proposta enviada', 'proposal'],
+  },
+  {
+    key: 'negociacao',
+    label: 'Negociação',
+    badgeClass: 'bg-orange-100 text-orange-700',
+    statuses: ['decisionmakerboughtin', 'negociacao', 'negotiacao', 'negotiation'],
+  },
+  {
+    key: 'em assinatura',
+    label: 'Em assinatura',
+    badgeClass: 'bg-indigo-100 text-indigo-700',
+    statuses: ['contractsent', 'emassinatura'],
+  },
+  {
+    key: 'fechado ganho',
+    label: 'Fechado (Ganho)',
+    badgeClass: 'bg-emerald-100 text-emerald-700',
+    statuses: ['closedwon', 'fechado', 'fechado ganho', 'fechado_ganho', 'won', 'ganho'],
+  },
+  {
+    key: 'fechado perdido',
+    label: 'Fechado (Perdido)',
+    badgeClass: 'bg-rose-100 text-rose-700',
+    statuses: ['closedlost', 'fechado perdido', 'fechado_perdido', 'lost', 'perdido'],
+  },
+] as const
 
-const fallbackStatusToStageKey: Record<string, string> = {
-  novo: 'prospeccao',
-  qualificado: 'qualificacao',
-  proposta: 'proposta enviada',
-  negociacao: 'negociacao',
-  fechado: 'fechado ganho',
+type StageDefinition = (typeof stageDefinitions)[number]
+
+type PipelineStage = {
+  id: number
+  stage: string
+  leads: number
+  definition?: StageDefinition
 }
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -58,118 +96,251 @@ const normalizeStageName = (value: string) =>
     .trim()
     .toLowerCase()
 
-const buildStatusToStageIdMap = (stages: PipelineStage[]) => {
-  const map = new Map<string, number>()
+const formatStatusLabel = (value: string) => {
+  if (!value) {
+    return 'Sem status'
+  }
 
-  stages.forEach(stage => {
-    const normalizedKey = normalizeStageName(stage.stage)
-    map.set(normalizedKey, stage.id)
+  return value
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
 
-    const statuses = stageNameStatusMap[normalizedKey]
-    statuses?.forEach(status => {
-      map.set(status.toLowerCase(), stage.id)
-    })
+const stageOrderMap = new Map<string, StageDefinition>()
+const statusToStageName = new Map<string, StageDefinition>()
+
+stageDefinitions.forEach(definition => {
+  stageOrderMap.set(definition.label, definition)
+  statusToStageName.set(normalizeStageName(definition.label), definition)
+  definition.statuses.forEach(status => {
+    statusToStageName.set(normalizeStageName(status), definition)
   })
+})
 
-  Object.entries(fallbackStatusToStageKey).forEach(([status, stageKey]) => {
-    if (!map.has(status)) {
-      const stage = stages.find(item => normalizeStageName(item.stage) === stageKey)
-      if (stage) {
-        map.set(status, stage.id)
+const getStageDefinitionForStatus = (status: string) => {
+  if (!status) {
+    return undefined
+  }
+
+  const normalized = normalizeStageName(status)
+  return statusToStageName.get(normalized)
+}
+
+const getStageNameForStatus = (status: string) => {
+  const definition = getStageDefinitionForStatus(status)
+  if (definition) {
+    return definition.label
+  }
+  return formatStatusLabel(status)
+}
+
+const getBadgeClassForStage = (stageName: string) => {
+  const definition = stageOrderMap.get(stageName)
+  return definition?.badgeClass ?? 'bg-gray-100 text-gray-600'
+}
+
+const parsePeriodToMonthYear = (period?: string | null, fallbackDate?: string | null) => {
+  if (period) {
+    const sanitized = period.toString().trim()
+    if (sanitized) {
+      const parts = sanitized.split(/[^0-9]/).filter(Boolean)
+
+      let year: number | null = null
+      let month: number | null = null
+
+      if (parts.length === 1) {
+        const only = parts[0]
+        if (only.length === 6) {
+          year = Number(only.slice(0, 4))
+          month = Number(only.slice(4, 6))
+        } else if (only.length === 8) {
+          year = Number(only.slice(0, 4))
+          month = Number(only.slice(4, 6))
+        }
+      } else if (parts.length >= 2) {
+        const [first, second] = parts
+        if (first.length === 4) {
+          year = Number(first)
+          month = Number(second.slice(0, 2))
+        } else if (second.length === 4) {
+          month = Number(first.slice(-2))
+          year = Number(second)
+        } else if (parts.length >= 3) {
+          month = Number(second.slice(0, 2))
+          year = Number(parts[2].slice(0, 4))
+        }
+      }
+
+      if (year && month && month >= 1 && month <= 12) {
+        const date = new Date(year, month - 1, 1)
+        if (!Number.isNaN(date.getTime())) {
+          return {
+            month: date.toLocaleString('pt-BR', { month: 'long' }),
+            year: date.getFullYear(),
+          }
+        }
       }
     }
-  })
+  }
 
-  return map
-}
-
-const groupLeadsByStage = (stages: PipelineStage[], leads: Lead[]) => {
-  const grouped = stages.reduce((acc, stage) => {
-    acc[stage.id] = [] as Lead[]
-    return acc
-  }, {} as Record<number, Lead[]>)
-
-  const statusToStageId = buildStatusToStageIdMap(stages)
-
-  leads.forEach(lead => {
-    const status = (lead.status ?? '').toString().toLowerCase()
-    const stageId = statusToStageId.get(status) ?? statusToStageId.get(normalizeStageName(status))
-
-    if (stageId) {
-      grouped[stageId]?.push(lead)
+  if (fallbackDate) {
+    const date = new Date(fallbackDate)
+    if (!Number.isNaN(date.getTime())) {
+      return {
+        month: date.toLocaleString('pt-BR', { month: 'long' }),
+        year: date.getFullYear(),
+      }
     }
-  })
+  }
 
-  Object.keys(grouped).forEach(key => {
-    const stageId = Number(key)
-    grouped[stageId] = grouped[stageId].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime()
-      const dateB = new Date(b.created_at).getTime()
-      return dateB - dateA
-    })
-  })
-
-  return grouped
-}
-
-const getPrimaryStatusForStage = (stage: PipelineStage): Lead['status'] => {
-  const normalizedKey = normalizeStageName(stage.stage)
-
-  switch (normalizedKey) {
-    case 'prospeccao':
-      return 'novo'
-    case 'qualificacao':
-      return 'qualificado'
-    case 'proposta enviada':
-      return 'proposta'
-    case 'negociacao':
-      return 'negociacao'
-    default:
-      return 'fechado'
+  const now = new Date()
+  return {
+    month: now.toLocaleString('pt-BR', { month: 'long' }),
+    year: now.getFullYear(),
   }
 }
 
-const createMockStageLeads = (stages: PipelineStage[]) => {
-  const now = new Date()
+const normalizeInvoiceValue = (value: unknown) => {
+  if (value === null || value === undefined) {
+    return ''
+  }
 
-  return stages.reduce((acc, stage) => {
-    const leads: Lead[] = Array.from({ length: stage.leads }).map((_, index) => {
-      const status = getPrimaryStatusForStage(stage)
-      const baseValue = 3200 + stage.id * 450 + index * 180
-      const invoiceAmount = (baseValue % 18000) + 950
+  if (typeof value === 'number') {
+    return value.toString()
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      return ''
+    }
+    return trimmed
+  }
+
+  return ''
+}
+
+const normalizeLead = (rawLead: any): Lead => {
+  const fallbackId = `lead-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const id = rawLead?.id ?? rawLead?.consumer_unit ?? rawLead?.consumerUnit ?? rawLead?.uc ?? fallbackId
+  const createdAt = rawLead?.dataCriacao ?? rawLead?.created_at ?? rawLead?.createdAt ?? null
+
+  const periodInfo = parsePeriodToMonthYear(rawLead?.periodo ?? rawLead?.period ?? rawLead?.reference_period, createdAt)
+
+  const consultantSource = rawLead?.consultant ?? rawLead?.consultor
+  const consultant = (() => {
+    if (!consultantSource) {
+      return undefined
+    }
+
+    const idValue = consultantSource.id ?? consultantSource.consultant_id ?? consultantSource.user_id
+    const nameValue = consultantSource.name ?? consultantSource.nome ?? ''
+    const surnameValue = consultantSource.surname ?? consultantSource.sobrenome ?? ''
+    const emailValue = consultantSource.email ?? ''
+
+    if (!idValue && !nameValue && !surnameValue && !emailValue) {
+      return undefined
+    }
+
+    return {
+      id: String(idValue ?? ''),
+      name: String(nameValue ?? ''),
+      surname: String(surnameValue ?? ''),
+      email: String(emailValue ?? ''),
+    }
+  })()
+
+  return {
+    id: String(id ?? fallbackId),
+    consumer_unit: String(rawLead?.consumer_unit ?? rawLead?.consumerUnit ?? rawLead?.uc ?? rawLead?.id ?? fallbackId),
+    name: String(rawLead?.nome ?? rawLead?.name ?? 'Lead sem nome'),
+    phone: String(rawLead?.telefone ?? rawLead?.phone ?? ''),
+    email: String(rawLead?.email ?? ''),
+    cnpj: String(rawLead?.cnpj ?? rawLead?.documento ?? rawLead?.document ?? ''),
+    month: periodInfo.month,
+    year: Number.isFinite(periodInfo.year) ? periodInfo.year : new Date().getFullYear(),
+    energy_value: normalizeInvoiceValue(rawLead?.valorEnergia ?? rawLead?.energy_value),
+    invoice_amount: normalizeInvoiceValue(rawLead?.valorFatura ?? rawLead?.invoice_amount ?? rawLead?.invoiceAmount),
+    status: String(rawLead?.status ?? rawLead?.status_pipeline ?? rawLead?.stage ?? 'Sem status'),
+    observations: rawLead?.observations ?? rawLead?.observacao ?? '',
+    consultant_id: rawLead?.consultant_id ?? rawLead?.consultor_id ?? undefined,
+    created_at: createdAt ?? new Date().toISOString(),
+    updated_at: rawLead?.dataAtualizacao ?? rawLead?.updated_at ?? rawLead?.updatedAt ?? createdAt ?? new Date().toISOString(),
+    deleted_at: rawLead?.deleted_at ?? undefined,
+    has_solar_generation: rawLead?.has_solar_generation ?? false,
+    solar_generation_type: rawLead?.solar_generation_type ?? '',
+    address: rawLead?.address ?? '',
+    city: rawLead?.city ?? '',
+    state: rawLead?.state ?? '',
+    zip_code: rawLead?.zip_code ?? '',
+    source: rawLead?.source ?? rawLead?.origem ?? '',
+    consultant,
+    lead_invoices: Array.isArray(rawLead?.lead_invoices) ? rawLead.lead_invoices : [],
+  }
+}
+
+const buildPipelineFromLeads = (leads: Lead[]) => {
+  const groupedByStage = new Map<string, { definition?: StageDefinition; leads: Lead[] }>()
+
+  leads.forEach(lead => {
+    const stageName = getStageNameForStatus(lead.status)
+    const definition = stageOrderMap.get(stageName) ?? getStageDefinitionForStatus(lead.status)
+    const key = stageName || 'Sem status'
+
+    if (!groupedByStage.has(key)) {
+      groupedByStage.set(key, { definition: definition ?? undefined, leads: [] })
+    }
+
+    groupedByStage.get(key)!.leads.push(lead)
+  })
+
+  const sortedEntries = Array.from(groupedByStage.entries())
+    .map(([stageName, value]) => {
+      const sortedLeads = value.leads.slice().sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime()
+        const dateB = new Date(b.created_at).getTime()
+        return dateB - dateA
+      })
 
       return {
-        id: `mock-${stage.id}-${index + 1}`,
-        consumer_unit: `UC-${stage.id}${(index + 1).toString().padStart(3, '0')}`,
-        name: `${stage.stage} ${index + 1}`,
-        phone: '+55 (11) 90000-0000',
-        email: `lead${stage.id}${index + 1}@exemplo.com`,
-        cnpj: '00.000.000/0000-00',
-        month: now.toLocaleString('pt-BR', { month: 'long' }),
-        year: now.getFullYear(),
-        energy_value: (invoiceAmount * 0.6).toFixed(2),
-        invoice_amount: invoiceAmount.toFixed(2),
-        status,
-        observations: '',
-        consultant_id: undefined,
-        created_at: new Date(now.getTime() - index * 86400000).toISOString(),
-        updated_at: new Date(now.getTime() - index * 43200000).toISOString(),
-        deleted_at: undefined,
-        has_solar_generation: false,
-        solar_generation_type: '',
-        address: '',
-        city: 'São Paulo',
-        state: 'SP',
-        zip_code: '00000-000',
-        source: 'Mock',
-        consultant: undefined,
-        lead_invoices: [],
+        stageName,
+        definition: value.definition,
+        leads: sortedLeads,
       }
     })
+    .sort((a, b) => {
+      const defA = stageOrderMap.get(a.stageName)
+      const defB = stageOrderMap.get(b.stageName)
 
-    acc[stage.id] = leads
-    return acc
-  }, {} as Record<number, Lead[]>)
+      if (defA && defB) {
+        return stageDefinitions.indexOf(defA) - stageDefinitions.indexOf(defB)
+      }
+
+      if (defA) {
+        return -1
+      }
+
+      if (defB) {
+        return 1
+      }
+
+      return a.stageName.localeCompare(b.stageName, 'pt-BR')
+    })
+
+  const stages: PipelineStage[] = []
+  const stageLeads: Record<number, Lead[]> = {}
+
+  sortedEntries.forEach((entry, index) => {
+    const stageId = index + 1
+    stages.push({ id: stageId, stage: entry.stageName, leads: entry.leads.length, definition: entry.definition })
+    stageLeads[stageId] = entry.leads
+  })
+
+  return { stages, stageLeads }
 }
 
 const formatCurrencyValue = (value?: string | number | null) => {
@@ -217,93 +388,75 @@ const formatDate = (value?: string | null) => {
   })
 }
 
-const statusDisplayMap: Record<string, { label: string; badgeClass: string }> = {
-  novo: { label: 'Prospecção', badgeClass: 'bg-sky-100 text-sky-700' },
-  qualificado: { label: 'Qualificação', badgeClass: 'bg-purple-100 text-purple-700' },
-  proposta: { label: 'Proposta Enviada', badgeClass: 'bg-amber-100 text-amber-700' },
-  negociacao: { label: 'Negociação', badgeClass: 'bg-orange-100 text-orange-700' },
-  fechado: { label: 'Fechado', badgeClass: 'bg-emerald-100 text-emerald-700' },
-  perdido: { label: 'Fechado (Perdido)', badgeClass: 'bg-rose-100 text-rose-700' },
-}
-
 const getStatusDisplay = (status: string) => {
-  const normalized = status.toLowerCase()
-  return statusDisplayMap[normalized] ?? { label: status, badgeClass: 'bg-gray-100 text-gray-600' }
+  const stageName = getStageNameForStatus(status)
+  return {
+    label: stageName,
+    badgeClass: getBadgeClassForStage(stageName),
+  }
 }
-
 
 export default function PipelineStatus() {
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [stageLeads, setStageLeads] = useState<Record<number, Lead[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [source, setSource] = useState<'api' | 'mock'>('mock')
-  const [leadsLoading, setLeadsLoading] = useState(false)
-  const [leadsError, setLeadsError] = useState<string | null>(null)
   const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({})
   const [selectedLeadContext, setSelectedLeadContext] = useState<{
     lead: Lead
     stage: PipelineStage
   } | null>(null)
 
-  const loadStageLeads = async (pipelineStages: PipelineStage[], dataSource: 'api' | 'mock') => {
-    setLeadsLoading(true)
-    setLeadsError(null)
-
-    try {
-      const response = await getLeads({ limit: 200 })
-
-      if (response?.success && Array.isArray(response.data?.leads)) {
-        const grouped = groupLeadsByStage(pipelineStages, response.data.leads as Lead[])
-        setStageLeads(grouped)
-      } else if (dataSource === 'mock') {
-        setStageLeads(createMockStageLeads(pipelineStages))
-      } else {
-        throw new Error('Não foi possível carregar a lista de leads')
-      }
-    } catch (err) {
-      if (dataSource === 'mock') {
-        setLeadsError(null)
-        setStageLeads(createMockStageLeads(pipelineStages))
-      } else {
-        setStageLeads(
-          pipelineStages.reduce((acc, stage) => {
-            acc[stage.id] = []
-            return acc
-          }, {} as Record<number, Lead[]>)
-        )
-        setLeadsError(err instanceof Error ? err.message : 'Erro ao carregar os leads do pipeline')
-      }
-    } finally {
-      setLeadsLoading(false)
-    }
-  }
-
-  const loadStages = async () => {
+  const loadPipeline = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await pipelineService.getPipelineStages()
-
-      if (!response.success) {
-        throw new Error('Não foi possível carregar o pipeline')
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('Token de autenticação não encontrado. Faça login novamente.')
       }
 
-      setStages(response.data)
-      setSource(response.source)
+      const response = await fetch(YNOVA_LEADS_ENDPOINT, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
 
-setExpandedStages(prev => {
+      if (!response.ok) {
+        throw new Error('Não foi possível carregar os leads da pipeline.')
+      }
+
+      const json = await response.json()
+      const leadsData = Array.isArray(json)
+        ? json
+        : Array.isArray(json?.data?.leads)
+          ? json.data.leads
+          : Array.isArray(json?.data)
+            ? json.data
+            : Array.isArray(json?.leads)
+              ? json.leads
+              : []
+
+      if (!Array.isArray(leadsData)) {
+        throw new Error('Formato inesperado de resposta ao carregar os leads.')
+      }
+
+      const normalizedLeads = leadsData.map(normalizeLead)
+      const { stages: computedStages, stageLeads: groupedLeads } = buildPipelineFromLeads(normalizedLeads)
+
+      setStages(computedStages)
+      setStageLeads(groupedLeads)
+      setExpandedStages(prev => {
         const next: Record<number, boolean> = {}
-        response.data.forEach(stage => {
-          next[stage.id] = prev[stage.id] ?? false
+        computedStages.forEach((stage, index) => {
+          next[stage.id] = prev[stage.id] ?? index === 0
         })
         return next
       })
-      await loadStageLeads(response.data, response.source)
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro inesperado ao carregar o pipeline')
+      setError(err instanceof Error ? err.message : 'Erro inesperado ao carregar os leads da pipeline.')
+      setStages([])
       setStageLeads({})
     } finally {
       setLoading(false)
@@ -311,11 +464,22 @@ setExpandedStages(prev => {
   }
 
   useEffect(() => {
-    loadStages()
+    loadPipeline()
   }, [])
 
-  const totalLeads = useMemo(() => stages.reduce((total, stage) => total + stage.leads, 0), [stages])
-  const maxLeads = useMemo(() => Math.max(...stages.map(stage => stage.leads), 1), [stages])
+  const totalLeads = useMemo(
+    () => stages.reduce((total, stage) => total + stage.leads, 0),
+    [stages]
+  )
+
+  const maxLeads = useMemo(() => {
+    if (!stages.length) {
+      return 0
+    }
+    return Math.max(...stages.map(stage => stage.leads))
+  }, [stages])
+
+  const safeMaxLeads = maxLeads > 0 ? maxLeads : 1
 
   const handleToggleStage = (stageId: number) => {
     setExpandedStages(prev => ({
@@ -326,14 +490,6 @@ setExpandedStages(prev => {
 
   const handleLeadClick = (stage: PipelineStage, lead: Lead) => {
     setSelectedLeadContext({ stage, lead })
-  }
-
-  const handleRetryLeads = () => {
-    if (stages.length) {
-      loadStageLeads(stages, source)
-    } else {
-      loadStages()
-    }
   }
 
   const closeLeadDetails = () => setSelectedLeadContext(null)
@@ -358,7 +514,7 @@ setExpandedStages(prev => {
           <p className="text-sm text-red-600">{error}</p>
         </div>
         <button
-          onClick={loadStages}
+          onClick={loadPipeline}
           className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
         >
           <RefreshCcw className="h-4 w-4" />
@@ -381,105 +537,94 @@ setExpandedStages(prev => {
           <div className="rounded-full bg-gray-100 px-3 py-1 font-medium text-gray-700">
             Total de leads: {totalLeads}
           </div>
-          {source === 'mock' && (
-            <div className="rounded-full bg-orange-100 px-3 py-1 text-orange-600">
-              Dados mockados
-            </div>
-          )}
         </div>
       </div>
 
-      {leadsError && (
-        <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-          <span>Não foi possível carregar a lista de leads por etapa. {leadsError}</span>
-          <div>
-            <button
-              onClick={handleRetryLeads}
-              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 font-semibold text-white transition hover:bg-amber-700"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              Tentar novamente
-            </button>
-          </div>
+      {!stages.length ? (
+        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
+          Nenhum lead encontrado na pipeline.
         </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {stages.map((stage, index) => {
+              const leadsInStage = stageLeads[stage.id] ?? []
+              return (
+                <div
+                  key={stage.id}
+                  className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+                >
+                  <div className={`rounded-lg bg-gradient-to-r ${stageColors[index % stageColors.length]} px-4 py-3 text-white`}>
+                    <p className="text-sm font-medium uppercase tracking-wide">Etapa {index + 1}</p>
+                    <h3 className="text-lg font-semibold">{stage.stage}</h3>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-3xl font-bold text-gray-900">{stage.leads}</p>
+                      <p className="text-sm text-gray-500">Leads nesta etapa</p>
+                    </div>
+                    <div className="text-right text-sm text-gray-400">
+                      {safeMaxLeads > 0 ? ((stage.leads / safeMaxLeads) * 100).toFixed(0) : 0}% do topo do funil
+                    </div>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#ff6b35] to-[#ff8f64]"
+                      style={{ width: `${safeMaxLeads > 0 ? Math.max((stage.leads / safeMaxLeads) * 100, stage.leads > 0 ? 10 : 0) : 0}%` }}
+                    ></div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStage(stage.id)}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#ff6b35]/60 hover:text-[#ff6b35]"
+                  >
+                    <span>
+                      Exibir leads ({leadsInStage.length}
+                      {leadsInStage.length !== stage.leads ? ` de ${stage.leads}` : ''})
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${expandedStages[stage.id] ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {expandedStages[stage.id] && (
+                    <StageLeadList
+                      leads={leadsInStage}
+                      onLeadClick={lead => handleLeadClick(stage, lead)}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900">Visão em funil</h3>
+            <div className="space-y-4">
+              {stages.map((stage, index) => (
+                <div key={stage.id} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="w-full sm:w-48">
+                    <p className="text-sm font-medium text-gray-700">{stage.stage}</p>
+                  </div>
+                  <div className="flex-1">
+                    <div className="h-3 rounded-full bg-gray-100">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${stageColors[index % stageColors.length]}`}
+                        style={{ width: `${safeMaxLeads > 0 ? (stage.leads / safeMaxLeads) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="w-full text-right text-sm font-semibold text-gray-700 sm:w-24">
+                    {stage.leads} leads
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {stages.map((stage, index) => (
-          <div
-            key={stage.id}
-            className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
-          >
-            <div className={`rounded-lg bg-gradient-to-r ${stageColors[index % stageColors.length]} px-4 py-3 text-white`}>
-              <p className="text-sm font-medium uppercase tracking-wide">Etapa {stage.id}</p>
-              <h3 className="text-lg font-semibold">{stage.stage}</h3>
-            </div>
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-3xl font-bold text-gray-900">{stage.leads}</p>
-                <p className="text-sm text-gray-500">Leads nesta etapa</p>
-              </div>
-              <div className="text-right text-sm text-gray-400">
-                {((stage.leads / maxLeads) * 100).toFixed(0)}% do topo do funil
-              </div>
-            </div>
-            <div className="h-2 rounded-full bg-gray-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#ff6b35] to-[#ff8f64]"
-                style={{ width: `${Math.max((stage.leads / maxLeads) * 100, 10)}%` }}
-              ></div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleToggleStage(stage.id)}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#ff6b35]/60 hover:text-[#ff6b35]"
-            >
-              <span>
-                Exibir leads ({(stageLeads[stage.id] ?? []).length}
-                {(stageLeads[stage.id] ?? []).length !== stage.leads ? ` de ${stage.leads}` : ''})
-              </span>
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${expandedStages[stage.id] ? 'rotate-180' : ''}`}
-              />
-            </button>
-            {expandedStages[stage.id] && (
-              <StageLeadList
-                leads={stageLeads[stage.id] ?? []}
-                loading={leadsLoading}
-                onLeadClick={lead => handleLeadClick(stage, lead)}
-              />
-            )}
-
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900">Visão em funil</h3>
-        <div className="space-y-4">
-          {stages.map((stage, index) => (
-            <div key={stage.id} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="w-full sm:w-48">
-                <p className="text-sm font-medium text-gray-700">{stage.stage}</p>
-              </div>
-              <div className="flex-1">
-                <div className="h-3 rounded-full bg-gray-100">
-                  <div
-                    className={`h-full rounded-full bg-gradient-to-r ${stageColors[index % stageColors.length]}`}
-                    style={{ width: `${(stage.leads / maxLeads) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div className="w-full text-right text-sm font-semibold text-gray-700 sm:w-24">
-                {stage.leads} leads
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-          {selectedLeadContext && (
+      {selectedLeadContext && (
         <LeadDetailsModal
           lead={selectedLeadContext.lead}
           stage={selectedLeadContext.stage}
@@ -492,22 +637,11 @@ setExpandedStages(prev => {
 
 function StageLeadList({
   leads,
-  loading,
   onLeadClick,
 }: {
   leads: Lead[]
-  loading: boolean
   onLeadClick: (lead: Lead) => void
 }) {
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-500">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Carregando leads da etapa...
-      </div>
-    )
-  }
-
   if (!leads.length) {
     return (
       <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-500">

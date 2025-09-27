@@ -16,7 +16,7 @@ import LoginPage from './pages/LoginPage';
 import TrainingPage from './pages/TrainingPage';
 import { apiRequest } from './utils/api';
 import { User } from './types';
-import Negociacoes from './pages/Negociacoes';
+// import Negociacoes from './pages/Negociacoes';
 
 
 export default function App() {
@@ -178,7 +178,7 @@ export default function App() {
                 <Route path="training" element={<TrainingPage />} />
                 {/* <Route path="notifications" element={<NotificationsPage />} /> */}
                 <Route path="help" element={<HelpPage />} />
-                <Route path="negociacoes" element={<Negociacoes />} />
+                {/* <Route path="negociacoes" element={<Negociacoes />} /> */}
               </Route>
               <Route path="/login" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />

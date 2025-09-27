@@ -22,7 +22,7 @@ import { User as UserType } from '../types';
 
 const navigation = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
-  { to: '/negociacoes', label: 'Negociações', icon: Handshake },
+  // { to: '/negociacoes', label: 'Negociações', icon: Handshake },
   // { to: '/agenda', label: 'Agenda', icon: Calendar },
   // { to: '/proposals', label: 'Propostas', icon: FileText },
   // { to: '/notifications', label: 'Notificações', icon: Bell },
@@ -67,12 +67,8 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
   };
 
   const handleAddNegociacao = () => {
-    // Navigate to negociacoes page first, then open modal
-    navigate('/negociacoes');
-    // Small delay to ensure page is loaded before opening modal
-    setTimeout(() => {
-      openModal('novo');
-    }, 100);
+    setIsMobileMenuOpen(false);
+    openModal('novo');
   };
 
   return (

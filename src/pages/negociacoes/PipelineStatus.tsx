@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertTriangle,
   Building2,
@@ -490,6 +490,7 @@ export default function PipelineStatus() {
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [stageLeads, setStageLeads] = useState<Record<number, Lead[]>>({})
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({})
   const [selectedLeadContext, setSelectedLeadContext] = useState<{
@@ -498,9 +499,16 @@ export default function PipelineStatus() {
   } | null>(null)
   const [leads, setLeads] = useState<Lead[]>([])
 
-  const loadPipeline = async () => {
+  const loadPipeline = useCallback(async (options?: { silent?: boolean }) => {
+    const isSilent = options?.silent ?? false
+
     try {
-      setLoading(true)
+      if (isSilent) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
+      }
+
       setError(null)
 
       const leadsData = await fetchAllLeads()
@@ -528,13 +536,17 @@ export default function PipelineStatus() {
       setStageLeads({})
       setLeads([])
     } finally {
-      setLoading(false)
+      if (isSilent) {
+        setRefreshing(false)
+      } else {
+        setLoading(false)
+      }
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadPipeline()
-  }, [])
+  }, [loadPipeline])
 
   const metrics = useMemo(() => {
     const totalLeads = leads.length
@@ -589,7 +601,7 @@ export default function PipelineStatus() {
           <p className="text-sm text-red-600">{error}</p>
         </div>
         <button
-          onClick={loadPipeline}
+          onClick={() => loadPipeline()}
           className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
         >
           <RefreshCcw className="h-4 w-4" />
@@ -610,12 +622,12 @@ export default function PipelineStatus() {
         </div>
         <button
           type="button"
-          onClick={loadPipeline}
-          disabled={loading}
+          onClick={() => loadPipeline({ silent: true })}
+          disabled={loading || refreshing}
           className="inline-flex items-center gap-2 self-start rounded-lg border border-[#ff6b35] px-4 py-2 text-sm font-semibold text-[#ff6b35] transition hover:bg-[#ff6b35] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-[#ff6b35] sm:self-auto"
         >
-          <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          {loading ? 'Atualizando...' : 'Atualizar Dados'}
+          <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
         </button>
       </div>
 

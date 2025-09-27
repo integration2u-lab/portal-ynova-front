@@ -175,7 +175,7 @@ export const createLead = async (leadData: {
   year: number;
   energy_value: number;
   invoice_amount: number;
-  status?: 'novo' | 'qualificado' | 'proposta' | 'negociacao' | 'fechado';
+  status?: string;
   observations?: string;
   has_solar_generation?: boolean;
   solar_generation_type?: string;
@@ -208,7 +208,7 @@ export const updateLead = async (leadId: string, leadData: {
   year?: number;
   energy_value?: number;
   invoice_amount?: number;
-  status?: 'novo' | 'qualificado' | 'proposta' | 'negociacao' | 'fechado';
+  status?: string;
   observations?: string;
   has_solar_generation?: boolean;
   solar_generation_type?: string;

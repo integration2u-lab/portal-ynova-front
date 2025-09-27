@@ -496,6 +496,7 @@ export default function PipelineStatus() {
     lead: Lead
     stage: PipelineStage
   } | null>(null)
+  const [leads, setLeads] = useState<Lead[]>([])
 
   const loadPipeline = async () => {
     try {
@@ -513,6 +514,7 @@ export default function PipelineStatus() {
 
       setStages(computedStages)
       setStageLeads(groupedLeads)
+      setLeads(normalizedLeads)
       setExpandedStages(prev => {
         const next: Record<number, boolean> = {}
         computedStages.forEach((stage, index) => {
@@ -524,6 +526,7 @@ export default function PipelineStatus() {
       setError(err instanceof Error ? err.message : 'Erro inesperado ao carregar os leads da pipeline.')
       setStages([])
       setStageLeads({})
+      setLeads([])
     } finally {
       setLoading(false)
     }
@@ -533,10 +536,16 @@ export default function PipelineStatus() {
     loadPipeline()
   }, [])
 
-  const totalLeads = useMemo(
-    () => stages.reduce((total, stage) => total + stage.leads, 0),
-    [stages]
-  )
+  const metrics = useMemo(() => {
+    const totalLeads = leads.length
+    const totalPipeline = leads.reduce((sum, lead) => {
+      const amount = lead.invoice_amount ?? '0'
+      const parsedAmount = typeof amount === 'number' ? amount : parseFloat(amount)
+      return sum + (Number.isFinite(parsedAmount) ? parsedAmount : 0)
+    }, 0)
+    const ticketMedio = totalLeads ? totalPipeline / totalLeads : 0
+    return { totalLeads, totalPipeline, ticketMedio }
+  }, [leads])
 
   const maxLeads = useMemo(() => {
     if (!stages.length) {
@@ -599,11 +608,33 @@ export default function PipelineStatus() {
             Visualize rapidamente o volume de leads em cada etapa do funil de vendas.
           </p>
         </div>
-        <div className="flex items-center gap-3 text-sm text-gray-500">
-          <div className="rounded-full bg-gray-100 px-3 py-1 font-medium text-gray-700">
-            Total de leads: {totalLeads}
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={loadPipeline}
+          disabled={loading}
+          className="inline-flex items-center gap-2 self-start rounded-lg border border-[#ff6b35] px-4 py-2 text-sm font-semibold text-[#ff6b35] transition hover:bg-[#ff6b35] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-[#ff6b35] sm:self-auto"
+        >
+          <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? 'Atualizando...' : 'Atualizar Dados'}
+        </button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricCard
+          title="Total de Leads"
+          value={metrics.totalLeads.toLocaleString('pt-BR')}
+          description="Quantidade total de oportunidades disponíveis."
+        />
+        <MetricCard
+          title="Valor do Pipeline"
+          value={currencyFormatter.format(metrics.totalPipeline)}
+          description="Somatório do valor potencial de todas as oportunidades."
+        />
+        <MetricCard
+          title="Ticket Médio"
+          value={currencyFormatter.format(metrics.ticketMedio)}
+          description="Média de valor por lead no funil."
+        />
       </div>
 
       {!stages.length ? (
@@ -697,6 +728,24 @@ export default function PipelineStatus() {
           onClose={closeLeadDetails}
         />
       )}
+    </div>
+  )
+}
+
+function MetricCard({
+  title,
+  value,
+  description,
+}: {
+  title: string
+  value: string
+  description: string
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <p className="text-sm font-medium text-gray-500">{title}</p>
+      <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
+      <p className="mt-1 text-xs text-gray-500">{description}</p>
     </div>
   )
 }

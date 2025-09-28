@@ -19,10 +19,13 @@ export const apiRequest = async (
 ): Promise<Response> => {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Don't set Content-Type for FormData (let browser set it with boundary)
+  const isFormData = options.body instanceof FormData;
+  
   const requestOptions: RequestInit = {
     method: options.method || 'GET',
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     },
     body: options.body,

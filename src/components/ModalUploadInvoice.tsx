@@ -13,6 +13,8 @@ interface FormData {
   consumer_unit: string;
   client_name: string;
   cnpj: string;
+  phone: string;
+  email: string;
   month: string;
   year: string;
   energy_value: string;
@@ -28,6 +30,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
     consumer_unit: '',
     client_name: '',
     cnpj: '',
+    phone: '',
+    email: '',
     month: '',
     year: new Date().getFullYear().toString(),
     energy_value: '',
@@ -49,6 +53,14 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
       newErrors.cnpj = 'CNPJ é obrigatório';
     } else if (!/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(formData.cnpj)) {
       newErrors.cnpj = 'CNPJ deve estar no formato 00.000.000/0000-00';
+    }
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Telefone é obrigatório';
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = 'E-mail é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'E-mail deve ter um formato válido';
     }
     if (!formData.month.trim()) {
       newErrors.month = 'Mês é obrigatório';
@@ -114,6 +126,19 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
     return numbers.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
   };
 
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) {
+      return numbers;
+    } else if (numbers.length <= 4) {
+      return `+55 (${numbers.slice(2)})`;
+    } else if (numbers.length <= 9) {
+      return `+55 (${numbers.slice(2, 4)}) ${numbers.slice(4)}`;
+    } else {
+      return `+55 (${numbers.slice(2, 4)}) ${numbers.slice(4, 9)}-${numbers.slice(9, 13)}`;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -133,13 +158,16 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
       const formDataToSend = new FormData();
       formDataToSend.append('file', selectedFile);
       formDataToSend.append('consumer_unit', formData.consumer_unit);
-      formDataToSend.append('client_name', formData.client_name);
+      formDataToSend.append('name', formData.client_name); // Map client_name to name
       formDataToSend.append('cnpj', formData.cnpj);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('email', formData.email);
       formDataToSend.append('month', formData.month);
       formDataToSend.append('year', formData.year);
       formDataToSend.append('energy_value', formData.energy_value);
       formDataToSend.append('invoice_amount', formData.invoice_amount);
       formDataToSend.append('observations', formData.observations);
+      formDataToSend.append('status', 'appointmentscheduled'); // Set default status
 
       const response = await apiRequestWithAuth('/leads', {
         method: 'POST',
@@ -168,6 +196,8 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
       consumer_unit: '',
       client_name: '',
       cnpj: '',
+      phone: '',
+      email: '',
       month: '',
       year: new Date().getFullYear().toString(),
       energy_value: '',
@@ -321,6 +351,48 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                   <p className="text-red-500 text-xs mt-1 flex items-center">
                     <AlertCircle size={12} className="mr-1" />
                     {errors.cnpj}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Telefone *
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', formatPhone(e.target.value))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
+                  }`}
+                  placeholder="+55 (11) 99999-9999"
+                />
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle size={12} className="mr-1" />
+                    {errors.phone}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  E-mail *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                    errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
+                  }`}
+                  placeholder="cliente@empresa.com"
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle size={12} className="mr-1" />
+                    {errors.email}
                   </p>
                 )}
               </div>

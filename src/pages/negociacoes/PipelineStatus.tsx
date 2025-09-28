@@ -4,17 +4,21 @@ import {
   Building2,
   Calendar,
   ChevronDown,
+  ExternalLink,
   FileText,
   Loader2,
   Mail,
   Phone,
+  Plus,
   RefreshCcw,
   User,
   X,
   type LucideIcon,
 } from 'lucide-react'
-import type { Lead } from '../../types'
-import { getLeads } from '../../utils/api'
+import type { Lead, LeadInvoice } from '../../types'
+import { getLeads, getLeadInvoices } from '../../utils/api'
+import ModalUploadInvoice from '../../components/ModalUploadInvoice'
+import ModalUploadInvoiceToLead from '../../components/ModalUploadInvoiceToLead'
 
 const stageColors = [
   'from-orange-500 to-orange-400',
@@ -498,6 +502,13 @@ export default function PipelineStatus() {
     stage: PipelineStage
   } | null>(null)
   const [leads, setLeads] = useState<Lead[]>([])
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
+  const [isLeadInvoiceModalOpen, setIsLeadInvoiceModalOpen] = useState(false)
+  const [selectedLeadInvoices, setSelectedLeadInvoices] = useState<LeadInvoice[]>([])
+  const [selectedLeadForInvoices, setSelectedLeadForInvoices] = useState<Lead | null>(null)
+  const [isUploadInvoiceToLeadModalOpen, setIsUploadInvoiceToLeadModalOpen] = useState(false)
+  const [selectedLeadForUpload, setSelectedLeadForUpload] = useState<Lead | null>(null)
+  const [leadDetailsRefreshTrigger, setLeadDetailsRefreshTrigger] = useState(0)
 
   const loadPipeline = useCallback(async (options?: { silent?: boolean }) => {
     const isSilent = options?.silent ?? false
@@ -581,6 +592,66 @@ export default function PipelineStatus() {
 
   const closeLeadDetails = () => setSelectedLeadContext(null)
 
+  const handleInvoiceUploadSuccess = (lead: any) => {
+    // Auto-refresh the pipeline after successful invoice upload
+    loadPipeline({ silent: true })
+  }
+
+  const openInvoiceModal = () => setIsInvoiceModalOpen(true)
+  const closeInvoiceModal = () => setIsInvoiceModalOpen(false)
+
+  const handleOpenLeadInvoices = async (lead: Lead) => {
+    try {
+      setSelectedLeadForInvoices(lead)
+      setError(null)
+      
+      // Load invoices for this lead
+      const response = await getLeadInvoices(lead.id)
+      if (response.success) {
+        setSelectedLeadInvoices(response.data)
+        setIsLeadInvoiceModalOpen(true)
+      } else {
+        setError('Falha ao carregar faturas')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao carregar faturas')
+    }
+  }
+
+  const handleCloseLeadInvoiceModal = () => {
+    setIsLeadInvoiceModalOpen(false)
+    setSelectedLeadInvoices([])
+    setSelectedLeadForInvoices(null)
+  }
+
+  const handleOpenUploadInvoiceToLead = (lead: Lead) => {
+    setSelectedLeadForUpload(lead)
+    setIsUploadInvoiceToLeadModalOpen(true)
+  }
+
+  const handleCloseUploadInvoiceToLead = () => {
+    setIsUploadInvoiceToLeadModalOpen(false)
+    setSelectedLeadForUpload(null)
+  }
+
+  const handleUploadInvoiceToLeadSuccess = () => {
+    // Auto-refresh the pipeline after successful invoice upload
+    loadPipeline({ silent: true })
+    
+    // Trigger refresh of lead details modal if it's open
+    setLeadDetailsRefreshTrigger(prev => prev + 1)
+  }
+
+  const handleOpenFile = (invoice: LeadInvoice) => {
+    // Use signed URL if available, otherwise fall back to storage URL
+    const url = invoice.signed_url || invoice.storage_url
+    if (url) {
+      window.open(url, '_blank')
+    } else {
+      setError('URL do arquivo não disponível')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -651,7 +722,7 @@ export default function PipelineStatus() {
 
       {!stages.length ? (
         <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
-          Nenhum lead encontrado na pipeline.
+          Nenhuma negociação encontrado na pipeline.
         </div>
       ) : (
         <>
@@ -686,7 +757,7 @@ export default function PipelineStatus() {
                   <button
                     type="button"
                     onClick={() => handleToggleStage(stage.id)}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#ff6b35]/60 hover:text-[#ff6b35]"
+                    className="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#ff6b35]/60 hover:text-[#ff6b35]"
                   >
                     <span>
                       Exibir leads ({leadsInStage.length}
@@ -700,6 +771,7 @@ export default function PipelineStatus() {
                     <StageLeadList
                       leads={leadsInStage}
                       onLeadClick={lead => handleLeadClick(stage, lead)}
+                      onOpenInvoices={handleOpenLeadInvoices}
                     />
                   )}
                 </div>
@@ -712,8 +784,15 @@ export default function PipelineStatus() {
             <div className="space-y-4">
               {stages.map((stage, index) => (
                 <div key={stage.id} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <div className="w-full sm:w-48">
-                    <p className="text-sm font-medium text-gray-700">{stage.stage}</p>
+                  <div className="w-full sm:w-48 relative group">
+                    <p className="text-sm font-medium text-gray-700 truncate relative">
+                      {stage.stage}
+                      {/* Tooltip for full stage name */}
+                      <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap max-w-xs">
+                        <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                        {stage.stage}
+                      </div>
+                    </p>
                   </div>
                   <div className="flex-1">
                     <div className="h-3 rounded-full bg-gray-100">
@@ -738,6 +817,106 @@ export default function PipelineStatus() {
           lead={selectedLeadContext.lead}
           stage={selectedLeadContext.stage}
           onClose={closeLeadDetails}
+          onOpenFile={handleOpenFile}
+          onUploadInvoice={handleOpenUploadInvoiceToLead}
+          refreshTrigger={leadDetailsRefreshTrigger}
+        />
+      )}
+
+      {/* Floating Action Button for Invoice Upload */}
+      <button
+        onClick={openInvoiceModal}
+        className="fixed right-6 bottom-6 z-40 rounded-full bg-[#FE5200] p-4 text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-[#FE5200]/90"
+        title="Enviar Fatura"
+      >
+        <Plus size={24} />
+      </button>
+
+      {/* Invoice Upload Modal */}
+      <ModalUploadInvoice
+        isOpen={isInvoiceModalOpen}
+        onClose={closeInvoiceModal}
+        onSuccess={handleInvoiceUploadSuccess}
+      />
+
+      {/* Lead Invoices Modal */}
+      {isLeadInvoiceModalOpen && selectedLeadForInvoices && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Faturas - {selectedLeadForInvoices.name}
+                </h2>
+                <p className="text-sm text-gray-600">
+                  {selectedLeadForInvoices.consumer_unit} • {selectedLeadForInvoices.cnpj}
+                </p>
+              </div>
+              <button
+                onClick={handleCloseLeadInvoiceModal}
+                className="text-gray-500 transition-colors hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {selectedLeadInvoices.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Nenhuma fatura encontrada para este lead.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {selectedLeadInvoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className={`h-8 w-8 ${invoice.signed_url ? 'text-blue-600' : 'text-gray-400'}`} />
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {invoice.filename_normalized}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {formatCurrencyValue(invoice.invoice_amount)} • 
+                          {new Date(invoice.created_at).toLocaleDateString("pt-BR")}
+                          {!invoice.signed_url && (
+                            <span className="ml-2 text-red-500 text-xs">(Arquivo não disponível)</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenFile(invoice)}
+                        disabled={!invoice.signed_url}
+                        className={`flex items-center gap-2 rounded-lg border px-4 py-2 transition-colors ${
+                          invoice.signed_url 
+                            ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
+                            : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <ExternalLink size={16} />
+                        Abrir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Upload Invoice to Lead Modal */}
+      {isUploadInvoiceToLeadModalOpen && selectedLeadForUpload && (
+        <ModalUploadInvoiceToLead
+          isOpen={isUploadInvoiceToLeadModalOpen}
+          onClose={handleCloseUploadInvoiceToLead}
+          onSuccess={handleUploadInvoiceToLeadSuccess}
+          leadId={selectedLeadForUpload.id}
+          leadName={selectedLeadForUpload.name}
         />
       )}
     </div>
@@ -765,9 +944,11 @@ function MetricCard({
 function StageLeadList({
   leads,
   onLeadClick,
+  onOpenInvoices,
 }: {
   leads: Lead[]
   onLeadClick: (lead: Lead) => void
+  onOpenInvoices: (lead: Lead) => void
 }) {
   if (!leads.length) {
     return (
@@ -780,17 +961,30 @@ function StageLeadList({
   return (
     <div className="flex flex-col gap-3">
       {leads.map(lead => (
-        <button
+        <div
           key={lead.id}
-          type="button"
-          onClick={() => onLeadClick(lead)}
-          className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-[#ff6b35]/70 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#ff6b35]/40"
+          className="w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-[#ff6b35]/70 hover:shadow-md relative"
         >
           <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 space-y-1">
-              <p className="truncate text-base font-semibold text-gray-900">{lead.name}</p>
-              <p className="truncate text-sm text-gray-600">{lead.consumer_unit}</p>
-              <p className="truncate text-xs text-gray-400">{lead.cnpj}</p>
+            <div className="min-w-0 space-y-1 flex-1">
+              <button
+                type="button"
+                onClick={() => onLeadClick(lead)}
+                className="text-left w-full"
+              >
+                <div className="relative group">
+                  <p className="truncate text-base font-semibold text-gray-900 cursor-pointer" title={lead.name}>
+                    {lead.name}
+                  </p>
+                  {/* Tooltip for full company name */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap max-w-xs">
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    {lead.name}
+                  </div>
+                </div>
+                <p className="truncate text-sm text-gray-600">{lead.consumer_unit}</p>
+                <p className="truncate text-xs text-gray-400">{lead.cnpj}</p>
+              </button>
             </div>
             <div className="shrink-0 text-right">
               <p className="text-sm font-semibold text-gray-900">{formatCurrencyValue(lead.invoice_amount)}</p>
@@ -818,7 +1012,25 @@ function StageLeadList({
                   </span>
                 ))}
           </div>
-        </button>
+          
+          {/* Invoice section */}
+          {lead.lead_invoices && lead.lead_invoices.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpenInvoices(lead)
+                }}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
+              >
+                <FileText size={16} />
+                <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
+              </button>
+            </div>
+          )}
+          
+        </div>
       ))}
     </div>
   )
@@ -828,39 +1040,74 @@ function LeadDetailsModal({
   lead,
   stage,
   onClose,
+  onOpenFile,
+  onUploadInvoice,
+  refreshTrigger,
 }: {
   lead: Lead
   stage: PipelineStage
   onClose: () => void
+  onOpenFile: (invoice: LeadInvoice) => void
+  onUploadInvoice: (lead: Lead) => void
+  refreshTrigger?: number
 }) {
+  const [invoices, setInvoices] = useState<LeadInvoice[]>([])
+  const [loadingInvoices, setLoadingInvoices] = useState(false)
+  
   const statusInfo = getStatusDisplay(lead.status)
   const sources = lead.source
     ?.split(',')
     .map(source => source.trim())
     .filter(Boolean)
     ?? []
-  const invoices = lead.lead_invoices ?? []
+
+  // Load invoices with signed URLs when modal opens or when refreshTrigger changes
+  useEffect(() => {
+    const loadInvoices = async () => {
+      setLoadingInvoices(true)
+      try {
+        const response = await getLeadInvoices(lead.id)
+        if (response.success) {
+          setInvoices(response.data)
+        } else {
+          // Fallback to the original invoices if API call fails
+          setInvoices(lead.lead_invoices || [])
+        }
+      } catch (error) {
+        console.error('Error loading invoices:', error)
+        // Fallback to the original invoices if API call fails
+        setInvoices(lead.lead_invoices || [])
+      } finally {
+        setLoadingInvoices(false)
+      }
+    }
+
+    loadInvoices()
+  }, [lead.id, lead.lead_invoices, refreshTrigger])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-gray-100 px-6 py-4">
-          <div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+      <div className="w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden rounded-xl sm:rounded-2xl bg-white shadow-2xl">
+        {/* Fixed Header */}
+        <div className="flex items-start justify-between border-b border-gray-100 px-4 sm:px-6 py-4 flex-shrink-0">
+          <div className="min-w-0 flex-1 pr-3 sm:pr-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{stage.stage}</p>
-            <h3 className="text-2xl font-bold text-gray-900">{lead.name}</h3>
-            <p className="text-sm text-gray-500">{lead.consumer_unit}</p>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">{lead.name}</h3>
+            <p className="text-sm text-gray-500 truncate">{lead.consumer_unit}</p>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 flex-shrink-0"
             aria-label="Fechar detalhes do lead"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="space-y-6 px-6 py-6">
-          <div className="flex flex-wrap items-center gap-2">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusInfo.badgeClass}`}>
               {statusInfo.label}
             </span>
@@ -902,28 +1149,65 @@ function LeadDetailsModal({
             </div>
           )}
 
-          {invoices.length > 0 && (
-            <div>
-              <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
                 <FileText className="h-4 w-4 text-[#ff6b35]" />
                 Faturas enviadas
+                {loadingInvoices && (
+                  <span className="text-xs text-gray-500">(carregando...)</span>
+                )}
               </p>
+              <button
+                onClick={() => onUploadInvoice(lead)}
+                className="flex items-center gap-1 rounded-lg border border-[#ff6b35] bg-[#ff6b35] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#e85f2f]"
+                title="Adicionar nova fatura"
+              >
+                <Plus className="h-3 w-3" />
+                Adicionar
+              </button>
+            </div>
+            {invoices.length > 0 ? (
               <div className="space-y-2">
                 {invoices.map(invoice => (
                   <div
                     key={invoice.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700"
+                    className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <span className="truncate pr-4">{invoice.filename_normalized || invoice.filename_original}</span>
-                    <span className="shrink-0 text-gray-500">{formatCurrencyValue(invoice.invoice_amount)}</span>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className={`h-4 w-4 flex-shrink-0 ${invoice.signed_url ? 'text-blue-600' : 'text-gray-400'}`} />
+                      <span className="truncate">{invoice.filename_normalized || invoice.filename_original}</span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="text-gray-500">{formatCurrencyValue(invoice.invoice_amount)}</span>
+                      <button
+                        onClick={() => onOpenFile(invoice)}
+                        disabled={!invoice.signed_url}
+                        className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                          invoice.signed_url 
+                            ? 'text-blue-600 hover:text-blue-800' 
+                            : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                        title={invoice.signed_url ? "Abrir arquivo" : "Arquivo não disponível"}
+                      >
+                        <ExternalLink size={14} />
+                        Abrir
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-4 text-sm text-gray-500">
+                Nenhuma fatura enviada ainda
+              </div>
+            )}
+          </div>
+          </div>
         </div>
 
-        <div className="flex justify-end border-t border-gray-100 bg-gray-50 px-6 py-4">
+        {/* Fixed Footer */}
+        <div className="flex justify-end border-t border-gray-100 bg-gray-50 px-4 sm:px-6 py-4 flex-shrink-0">
           <button
             onClick={onClose}
             className="rounded-lg bg-[#ff6b35] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e85f2f] focus:outline-none focus:ring-2 focus:ring-[#ff6b35]/50"

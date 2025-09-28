@@ -16,8 +16,8 @@ export default function Negociacoes() {
     <div className="mx-auto w-full max-w-[1200px]">
       {/* Título */}
       <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-gray-900 md:text-3xl">Negociações</h1>
-        <p className="text-sm text-gray-500 md:text-base">
+          <h1 className="text-2xl font-extrabold text-gray-900 md:text-3xl dark:text-gray-100">Negociações</h1>
+        <p className="text-sm text-gray-500 md:text-base dark:text-gray-300">
           Central de acompanhamento de negociações, comissões e metas
         </p>
       </div>

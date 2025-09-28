@@ -486,10 +486,6 @@ export default function ProfilePage({ user, onUserUpdate }: ProfilePageProps) {
               <span className="text-sm font-medium">Alterar senha</span>
               <ArrowRight size={16} />
             </button>
-            <button className="flex items-center justify-between w-full p-3 border border-gray-200 dark:border-[#1E1E1E] rounded-lg hover:bg-gray-50 dark:hover:bg-[#1E1E1E]">
-              <span className="text-sm font-medium">Configurar 2FA</span>
-              <ArrowRight size={16} />
-            </button>
           </div>
         </div>
       </div>

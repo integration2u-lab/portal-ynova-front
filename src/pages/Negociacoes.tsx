@@ -10,7 +10,7 @@ import { userService } from "../services/userService";
 import { User } from "../types";
 
 export default function Negociacoes() {
-  const [tab, setTab] = useState<"leads" | "pipeline" | "comissoes" | "metas">("leads");
+  const [tab, setTab] = useState<"leads" | "pipeline" | "comissoes" | "metas">("pipeline");
 
   return (
     <div className="mx-auto w-full max-w-[1200px]">
@@ -26,12 +26,12 @@ export default function Negociacoes() {
       <div className="rounded-xl bg-white shadow">
         <div className="overflow-x-auto border-b border-gray-200">
           <nav className="flex gap-4 px-4">
-            <TabBtn
+            {/* <TabBtn
               icon={Users}
               label="Negociações"
               active={tab === "leads"}
               onClick={() => setTab("leads")}
-            />
+            /> */}
             <TabBtn
               icon={Filter}
               label="Status da Pipeline"
@@ -54,7 +54,7 @@ export default function Negociacoes() {
         </div>
 
         <div className="p-4 md:p-6">
-          {tab === "leads" && <LeadsKanban />}
+          {/* {tab === "leads" && <LeadsKanban />} */}
           {tab === "pipeline" && <PipelineStatus />}
           {tab === "comissoes" && <ComissoesSection />}
           {tab === "metas" && <ProgressoDeMetas fechamentosAtuais={36} />}

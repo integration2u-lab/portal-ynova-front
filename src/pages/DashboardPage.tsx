@@ -4,6 +4,65 @@ import KpiCard from '../components/KpiCard';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { dashboardService, DashboardStats, ChartData } from '../services/dashboardService';
+import { stageColorMap } from '../utils/leadStatusMapping';
+
+const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const numberFormatter = new Intl.NumberFormat('pt-BR');
+
+const parseNumericValue = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return 0;
+  }
+
+  const sanitized = trimmed.replace(/[^0-9.,-]/g, '');
+  const normalized = sanitized.includes(',')
+    ? sanitized.replace(/\./g, '').replace(',', '.')
+    : sanitized;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatCurrencyValue = (value: string | number | null | undefined) =>
+  currencyFormatter.format(parseNumericValue(value));
+
+const formatNumberValue = (value: number | null | undefined) => numberFormatter.format(value ?? 0);
+
+const formatPercentageValue = (value: number | null | undefined) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return '0%';
+  }
+
+  const absolute = Math.abs(value);
+  const formatted = absolute.toLocaleString('pt-BR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+
+  if (value > 0) {
+    return `+${formatted}%`;
+  }
+
+  if (value < 0) {
+    return `-${formatted}%`;
+  }
+
+  return `${formatted}%`;
+};
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -19,13 +78,10 @@ export default function DashboardPage() {
         setLoading(true);
         setError(null);
         
-        const [statsResponse, chartsResponse] = await Promise.all([
-          dashboardService.getDashboardStats(),
-          dashboardService.getDashboardCharts(),
-        ]);
+        const response = await dashboardService.getDashboardData();
 
-        setDashboardStats(statsResponse.data);
-        setChartData(chartsResponse.data);
+        setDashboardStats(response.data.stats);
+        setChartData(response.data.charts);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar dados do dashboard');
@@ -38,16 +94,6 @@ export default function DashboardPage() {
       fetchDashboardData();
     }
   }, [user]);
-
-  const formatCurrency = (value: string | number) => {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (numValue >= 1000000) {
-      return `R$ ${(numValue / 1000000).toFixed(1)}M`;
-    } else if (numValue >= 1000) {
-      return `R$ ${(numValue / 1000).toFixed(1)}K`;
-    }
-    return `R$ ${numValue.toFixed(2)}`;
-  };
 
   if (loading) {
     return (
@@ -102,52 +148,58 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard 
-          title="Negociações Ativas" 
-          value={dashboardStats?.leads_ativos || 0} 
-          icon={UserCheck} 
-          color="blue" 
+        <KpiCard
+          title="Negociações Ativas"
+          value={formatNumberValue(dashboardStats?.leads_ativos ?? 0)}
+          icon={UserCheck}
+          color="blue"
         />
-        <KpiCard 
-          title="Taxa de Conversão" 
-          value={`${dashboardStats?.taxa_conversao || 0}%`} 
-          icon={TrendingUp} 
-          color="green" 
+        <KpiCard
+          title="Taxa de Conversão"
+          value={formatPercentageValue(dashboardStats?.taxa_conversao ?? 0)}
+          icon={TrendingUp}
+          color="green"
         />
-        <KpiCard 
-          title="Receita Potencial" 
-          value={dashboardStats?.receita_potencial ? formatCurrency(dashboardStats.receita_potencial) : 'R$ 0'} 
-          icon={DollarSign} 
-          color="orange" 
+        <KpiCard
+          title="Receita Potencial"
+          value={formatCurrencyValue(dashboardStats?.receita_potencial ?? 0)}
+          icon={DollarSign}
+          color="orange"
         />
-        <KpiCard 
-          title="Propostas em Negociação" 
-          value={dashboardStats?.propostas_em_negociacao || 0} 
-          icon={FileText} 
-          color="purple" 
+        <KpiCard
+          title="Propostas em Negociação"
+          value={formatNumberValue(dashboardStats?.propostas_em_negociacao ?? 0)}
+          icon={FileText}
+          color="purple"
         />
       </div>
 
       {/* Additional admin-only KPIs */}
       {isAdmin && dashboardStats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <KpiCard 
-            title="Total de Consultores" 
-            value={dashboardStats.total_consultants || 0} 
-            icon={Users} 
-            color="indigo" 
+          <KpiCard
+            title="Total de Consultores"
+            value={formatNumberValue(dashboardStats.total_consultants ?? 0)}
+            icon={Users}
+            color="indigo"
           />
-          <KpiCard 
-            title="Leads Este Mês" 
-            value={dashboardStats.current_month_leads || 0} 
-            icon={BarChart3} 
-            color="teal" 
+          <KpiCard
+            title="Leads Este Mês"
+            value={formatNumberValue(dashboardStats.current_month_leads ?? 0)}
+            icon={BarChart3}
+            color="teal"
           />
-          <KpiCard 
-            title="Crescimento Mensal" 
-            value={`${dashboardStats.monthly_growth || 0}%`} 
-            icon={TrendingUp} 
-            color={dashboardStats.monthly_growth && dashboardStats.monthly_growth > 0 ? "green" : "red"} 
+          <KpiCard
+            title="Crescimento Mensal"
+            value={formatPercentageValue(dashboardStats.monthly_growth ?? 0)}
+            icon={TrendingUp}
+            color={
+              dashboardStats.monthly_growth && dashboardStats.monthly_growth > 0
+                ? 'green'
+                : dashboardStats.monthly_growth && dashboardStats.monthly_growth < 0
+                  ? 'red'
+                  : 'orange'
+            }
           />
         </div>
       )}
@@ -159,16 +211,16 @@ export default function DashboardPage() {
             <div className="h-64 flex flex-col justify-center">
               <div className="space-y-2">
                 {chartData.monthly_evolution.slice(-6).map((month, index) => (
-                  <div key={index} className="flex items-center justify-between">
+                  <div key={`${month.year}-${month.month}-${index}`} className="flex items-center justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
                       {month.month} {month.year}
                     </span>
                     <div className="flex items-center space-x-4">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {month.leads} leads
+                        {formatNumberValue(month.leads)} leads
                       </span>
                       <span className="text-sm text-green-600 dark:text-green-400">
-                        {month.closed_leads} fechados
+                        {formatNumberValue(month.closed_leads)} fechados
                       </span>
                     </div>
                   </div>
@@ -186,33 +238,31 @@ export default function DashboardPage() {
           {chartData && chartData.segment_distribution.length > 0 ? (
             <div className="h-64 flex flex-col justify-center">
               <div className="space-y-3">
-                {chartData.segment_distribution.map((segment, index) => {
-                  const statusLabels: { [key: string]: string } = {
-                    'novo': 'Novos',
-                    'qualificado': 'Qualificados',
-                    'proposta': 'Propostas',
-                    'negociacao': 'Negociação',
-                    'fechado': 'Fechados'
-                  };
-                  
-                  const statusColors: { [key: string]: string } = {
-                    'novo': 'bg-blue-500',
-                    'qualificado': 'bg-yellow-500',
-                    'proposta': 'bg-purple-500',
-                    'negociacao': 'bg-orange-500',
-                    'fechado': 'bg-green-500'
-                  };
+                {chartData.segment_distribution.map(segment => {
+                  const colorClass = stageColorMap[segment.stageKey] || stageColorMap['outros'] || 'bg-gray-500';
+                  const stageLabel = segment.stageLabel?.trim() ?? '';
+                  const showStageLabel = stageLabel && stageLabel.toLowerCase() !== segment.label.toLowerCase();
 
                   return (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${statusColors[segment.status] || 'bg-gray-500'}`}></div>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {statusLabels[segment.status] || segment.status}
-                        </span>
+                    <div
+                      key={`${segment.stageKey}-${segment.status}`}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-600 dark:text-gray-300">
+                            {segment.label}
+                          </span>
+                          {showStageLabel && (
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                              {stageLabel}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {segment.count}
+                        {formatNumberValue(segment.count)}
                       </span>
                     </div>
                   );

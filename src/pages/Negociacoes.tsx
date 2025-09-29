@@ -13,7 +13,7 @@ export default function Negociacoes() {
   const [tab, setTab] = useState<"leads" | "pipeline" | "comissoes" | "metas">("pipeline");
 
   return (
-    <div className="mx-auto w-full max-w-[1200px]">
+    <div className="mx-auto w-full max-w-[1400px]">
       {/* Título */}
       <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-gray-900 md:text-3xl dark:text-gray-100">Negociações</h1>

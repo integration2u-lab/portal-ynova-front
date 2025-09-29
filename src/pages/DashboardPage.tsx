@@ -149,7 +149,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
-          title="Negociações Ativas"
+          title="Prospecções Ativas"
           value={formatNumberValue(dashboardStats?.leads_ativos ?? 0)}
           icon={UserCheck}
           color="blue"
@@ -277,17 +277,28 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4">
-        <button onClick={() => navigate('/negociacoes')} className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto">
-          Ver Negociações
-        </button>
-        <button onClick={() => navigate('/agenda')} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto">
-          Agendar Apresentação
-        </button>
-        <button onClick={() => navigate('/commissions')} className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto">
-          Ver Comissões
-        </button>
-      </div>
+      {/* 
+<div className="flex flex-wrap gap-4">
+  <button 
+    onClick={() => navigate('/negociacoes')} 
+    className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto"
+  >
+    Ver Negociações
+  </button>
+  <button 
+    onClick={() => navigate('/agenda')} 
+    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto"
+  >
+    Agendar Apresentação
+  </button>
+  <button 
+    onClick={() => navigate('/commissions')} 
+    className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full sm:w-auto"
+  >
+    Ver Comissões
+  </button>
+</div>
+*/} 
     </div>
   );
 }

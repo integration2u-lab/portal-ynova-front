@@ -29,6 +29,7 @@ export type Lead = {
     email: string;
   };
   lead_invoices?: LeadInvoice[];
+  commission_amount?: string;
 };
 
 export type LeadInvoice = {

@@ -30,6 +30,20 @@ const stageColors = [
   'from-rose-500 to-rose-400',
 ]
 
+const rawStatusFriendlyNames = {
+  appointmentscheduled: 'Prospecção',
+  '1142458134': 'Fatura',
+  qualifiedtobuy: 'Qualificado',
+  '1142458135': 'Apresentação',
+  decisionmakerboughtin: 'Negociação',
+  presentationscheduled: 'Fechamento',
+  contractsent: 'Em assinatura',
+  closedwon: 'Nutrição',
+  '1173301169': 'Contrato Gestão ok',
+  '1173301170': 'Contrato Energia ok',
+  '1173301171': 'Perdido',
+} as const
+
 const stageDefinitions = [
   {
     key: 'prospeccao',
@@ -116,6 +130,12 @@ const formatStatusLabel = (value: string) => {
 const stageOrderMap = new Map<string, StageDefinition>()
 const statusToStageName = new Map<string, StageDefinition>()
 
+const statusFriendlyNameMap = new Map<string, string>()
+
+Object.entries(rawStatusFriendlyNames).forEach(([status, label]) => {
+  statusFriendlyNameMap.set(normalizeStageName(status), label)
+})
+
 stageDefinitions.forEach(definition => {
   stageOrderMap.set(definition.label, definition)
   statusToStageName.set(normalizeStageName(definition.label), definition)
@@ -123,6 +143,22 @@ stageDefinitions.forEach(definition => {
     statusToStageName.set(normalizeStageName(status), definition)
   })
 })
+
+const friendlyLabel = statusFriendlyNameMap.get(normalizeStageName(status));
+const definition = statusToStageName.get(normalizeStageName(status));
+
+if (friendlyLabel && definition) {
+  stageOrderMap.set(friendlyLabel, definition);
+  statusToStageName.set(normalizeStageName(friendlyLabel), definition);
+}
+
+statusFriendlyNameMap.forEach((friendlyLabel, normalizedStatus) => {
+  const def = statusToStageName.get(normalizedStatus);
+  if (!def || !friendlyLabel) return;
+
+  stageOrderMap.set(friendlyLabel, def);
+  statusToStageName.set(normalizeStageName(friendlyLabel), def);
+});
 
 const getStageDefinitionForStatus = (status: string) => {
   if (!status) {
@@ -134,6 +170,14 @@ const getStageDefinitionForStatus = (status: string) => {
 }
 
 const getStageNameForStatus = (status: string) => {
+
+  const normalized = normalizeStageName(status)
+  const friendlyLabel = statusFriendlyNameMap.get(normalized)
+  if (friendlyLabel) {
+    return friendlyLabel
+  }
+
+
   const definition = getStageDefinitionForStatus(status)
   if (definition) {
     return definition.label

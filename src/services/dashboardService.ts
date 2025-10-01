@@ -9,6 +9,7 @@ import {
   getStageOrderIndex,
   negotiationStatusSet,
   normalizeStatus,
+  stageDefinitions,
   translateStatus,
 } from '../utils/leadStatusMapping';
 
@@ -432,28 +433,53 @@ const computeMonthlyEvolution = (leads: NormalizedLead[]): MonthlyEvolution[] =>
 
 const computeSegmentDistribution = (leads: NormalizedLead[]): SegmentDistribution[] => {
   const distributionMap = new Map<string, SegmentDistribution>();
+  const baseStageEntries = new Map<string, SegmentDistribution>();
+
+  stageDefinitions.forEach(definition => {
+    const entry: SegmentDistribution = {
+      status: definition.key,
+      label: definition.label,
+      stageKey: definition.key,
+      stageLabel: definition.label,
+      count: 0,
+    };
+    baseStageEntries.set(definition.key, entry);
+    distributionMap.set(definition.key, entry);
+  });
+
+  const additionalEntries = new Map<string, SegmentDistribution>();
 
   leads.forEach(lead => {
     const stageKey = getStageKeyForStatus(lead.status) || DEFAULT_STAGE_KEY;
+
+    if (distributionMap.has(stageKey)) {
+      distributionMap.get(stageKey)!.count += 1;
+      return;
+    }
+
     const label = translateStatus(lead.status);
     const normalizedLabel = normalizeStatus(label) || stageKey;
-    const key = `${stageKey}:${normalizedLabel}`;
+    const key = `${DEFAULT_STAGE_KEY}:${normalizedLabel}`;
 
-    if (!distributionMap.has(key)) {
-      distributionMap.set(key, {
+    if (!additionalEntries.has(key)) {
+      additionalEntries.set(key, {
         status: normalizedLabel,
         label,
-        stageKey,
-        stageLabel: getStageDisplayName(stageKey),
+        stageKey: DEFAULT_STAGE_KEY,
+        stageLabel: getStageDisplayName(DEFAULT_STAGE_KEY),
         count: 0,
       });
     }
 
-    const entry = distributionMap.get(key)!;
-    entry.count += 1;
+    additionalEntries.get(key)!.count += 1;
   });
 
-  return Array.from(distributionMap.values()).sort((a, b) => {
+  const result = [
+    ...baseStageEntries.values(),
+    ...additionalEntries.values(),
+  ];
+
+  return result.sort((a, b) => {
     const orderDiff = getStageOrderIndex(a.stageKey) - getStageOrderIndex(b.stageKey);
     if (orderDiff !== 0) {
       return orderDiff;

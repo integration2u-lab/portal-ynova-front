@@ -1,4 +1,4 @@
-type StageDefinition = {
+export type StageDefinition = {
   key: string;
   label: string;
   badgeClass: string;
@@ -13,16 +13,22 @@ export const stageDefinitions: readonly StageDefinition[] = [
     statuses: ['appointmentscheduled', 'novo', 'prospeccao', 'prospecting'],
   },
   {
-    key: 'qualificacao',
-    label: 'Qualificação',
+    key: 'fatura',
+    label: 'Fatura',
+    badgeClass: 'bg-amber-100 text-amber-700',
+    statuses: ['1142458134', 'fatura', 'invoice'],
+  },
+  {
+    key: 'qualificado',
+    label: 'Qualificado',
     badgeClass: 'bg-purple-100 text-purple-700',
     statuses: ['qualifiedtobuy', 'qualificado', 'qualificacao', 'qualification'],
   },
   {
-    key: 'proposta enviada',
-    label: 'Proposta Enviada',
-    badgeClass: 'bg-amber-100 text-amber-700',
-    statuses: ['presentationscheduled', 'proposta', 'proposta enviada', 'proposal'],
+    key: 'apresentacao',
+    label: 'Apresentação',
+    badgeClass: 'bg-indigo-100 text-indigo-700',
+    statuses: ['1142458135', 'apresentacao', 'apresentação', 'apresentacao realizada'],
   },
   {
     key: 'negociacao',
@@ -31,22 +37,50 @@ export const stageDefinitions: readonly StageDefinition[] = [
     statuses: ['decisionmakerboughtin', 'negociacao', 'negotiacao', 'negotiation'],
   },
   {
-    key: 'em assinatura',
+    key: 'fechamento',
+    label: 'Fechamento',
+    badgeClass: 'bg-cyan-100 text-cyan-700',
+    statuses: ['presentationscheduled', 'fechamento', 'fechamento agendado'],
+  },
+  {
+    key: 'em_assinatura',
     label: 'Em assinatura',
-    badgeClass: 'bg-indigo-100 text-indigo-700',
-    statuses: ['contractsent', 'emassinatura'],
+    badgeClass: 'bg-blue-100 text-blue-700',
+    statuses: ['contractsent', 'emassinatura', 'em assinatura', 'assinatura'],
   },
   {
-    key: 'fechado ganho',
-    label: 'Fechado (Ganho)',
+    key: 'nutricao',
+    label: 'Nutrição',
     badgeClass: 'bg-emerald-100 text-emerald-700',
-    statuses: ['closedwon', 'fechado', 'fechado ganho', 'fechado_ganho', 'won', 'ganho'],
+    statuses: [
+      'closedwon',
+      'nutricao',
+      'nutrição',
+      'nurturing',
+      'fechado',
+      'fechado ganho',
+      'fechado_ganho',
+      'won',
+      'ganho',
+    ],
   },
   {
-    key: 'fechado perdido',
-    label: 'Fechado (Perdido)',
+    key: 'contrato_gestao_ok',
+    label: 'Contrato Gestão ok',
+    badgeClass: 'bg-lime-100 text-lime-700',
+    statuses: ['1173301169', 'contrato gestao', 'contrato gestao ok'],
+  },
+  {
+    key: 'contrato_energia_ok',
+    label: 'Contrato Energia ok',
+    badgeClass: 'bg-teal-100 text-teal-700',
+    statuses: ['1173301170', 'contrato energia', 'contrato energia ok'],
+  },
+  {
+    key: 'perdido',
+    label: 'Perdido',
     badgeClass: 'bg-rose-100 text-rose-700',
-    statuses: ['closedlost', 'fechado perdido', 'fechado_perdido', 'lost', 'perdido'],
+    statuses: ['1173301171', 'closedlost', 'perdido', 'lost', 'fechado perdido', 'fechado_perdido'],
   },
 ] as const;
 
@@ -57,24 +91,32 @@ export const DEFAULT_STAGE_KEY = 'outros';
 export const stageKeyOrder: StageKey[] = stageDefinitions.map(definition => definition.key);
 
 export const stageColorMap: Record<string, string> = {
-  prospeccao: 'bg-blue-500',
-  qualificacao: 'bg-yellow-500',
-  'proposta enviada': 'bg-purple-500',
+  prospeccao: 'bg-sky-500',
+  fatura: 'bg-amber-500',
+  qualificado: 'bg-purple-500',
+  apresentacao: 'bg-indigo-500',
   negociacao: 'bg-orange-500',
-  'em assinatura': 'bg-indigo-500',
-  'fechado ganho': 'bg-green-500',
-  'fechado perdido': 'bg-rose-500',
+  fechamento: 'bg-cyan-500',
+  em_assinatura: 'bg-blue-500',
+  nutricao: 'bg-emerald-500',
+  contrato_gestao_ok: 'bg-lime-500',
+  contrato_energia_ok: 'bg-teal-500',
+  perdido: 'bg-rose-500',
   [DEFAULT_STAGE_KEY]: 'bg-gray-500',
 };
 
 export const stageDisplayNameMap: Record<string, string> = {
-  prospeccao: 'Apresentação Agendada',
-  qualificacao: 'Qualificação',
-  'proposta enviada': 'Proposta Enviada',
-  negociacao: 'Em Negociação',
-  'em assinatura': 'Em Assinatura',
-  'fechado ganho': 'Fechado (Ganho)',
-  'fechado perdido': 'Fechado (Perdido)',
+  prospeccao: 'Prospecção',
+  fatura: 'Fatura',
+  qualificado: 'Qualificado',
+  apresentacao: 'Apresentação',
+  negociacao: 'Negociação',
+  fechamento: 'Fechamento',
+  em_assinatura: 'Em assinatura',
+  nutricao: 'Nutrição',
+  contrato_gestao_ok: 'Contrato Gestão ok',
+  contrato_energia_ok: 'Contrato Energia ok',
+  perdido: 'Perdido',
 };
 
 const normalizeText = (value: string) =>
@@ -112,34 +154,53 @@ stageDefinitions.forEach(definition => {
 });
 
 const rawStatusFriendlyNames: Record<string, string> = {
-  appointmentscheduled: 'Apresentação Agendada',
-  novo: 'Novo Lead',
+  appointmentscheduled: 'Prospecção',
+  novo: 'Prospecção',
   prospeccao: 'Prospecção',
   prospecting: 'Prospecção',
-  qualifiedtobuy: 'Qualificado para Comprar',
-  qualificado: 'Lead Qualificado',
-  qualificacao: 'Qualificação',
-  qualification: 'Qualificação',
-  presentationscheduled: 'Apresentação Realizada',
-  proposta: 'Proposta Enviada',
-  'proposta enviada': 'Proposta Enviada',
-  proposal: 'Proposta Enviada',
-  decisionmakerboughtin: 'Decisor Engajado',
-  negociacao: 'Em Negociação',
-  negotiation: 'Em Negociação',
-  contractsent: 'Contrato Enviado',
-  emassinatura: 'Em Assinatura',
-  closedwon: 'Fechado (Ganho)',
-  fechado: 'Fechado (Ganho)',
-  'fechado ganho': 'Fechado (Ganho)',
-  fechado_ganho: 'Fechado (Ganho)',
-  won: 'Fechado (Ganho)',
-  ganho: 'Fechado (Ganho)',
-  closedlost: 'Fechado (Perdido)',
-  'fechado perdido': 'Fechado (Perdido)',
-  fechado_perdido: 'Fechado (Perdido)',
-  lost: 'Fechado (Perdido)',
-  perdido: 'Fechado (Perdido)',
+  '1142458134': 'Fatura',
+  fatura: 'Fatura',
+  invoice: 'Fatura',
+  qualifiedtobuy: 'Qualificado',
+  qualificado: 'Qualificado',
+  qualificacao: 'Qualificado',
+  qualification: 'Qualificado',
+  '1142458135': 'Apresentação',
+  apresentacao: 'Apresentação',
+  apresentação: 'Apresentação',
+  'apresentacao realizada': 'Apresentação',
+  decisionmakerboughtin: 'Negociação',
+  negociacao: 'Negociação',
+  negotiacao: 'Negociação',
+  negotiation: 'Negociação',
+  presentationscheduled: 'Fechamento',
+  fechamento: 'Fechamento',
+  'fechamento agendado': 'Fechamento',
+  contractsent: 'Em assinatura',
+  emassinatura: 'Em assinatura',
+  'em assinatura': 'Em assinatura',
+  assinatura: 'Em assinatura',
+  closedwon: 'Nutrição',
+  nutricao: 'Nutrição',
+  nutrição: 'Nutrição',
+  nurturing: 'Nutrição',
+  fechado: 'Nutrição',
+  'fechado ganho': 'Nutrição',
+  fechado_ganho: 'Nutrição',
+  won: 'Nutrição',
+  ganho: 'Nutrição',
+  '1173301169': 'Contrato Gestão ok',
+  'contrato gestao': 'Contrato Gestão ok',
+  'contrato gestao ok': 'Contrato Gestão ok',
+  '1173301170': 'Contrato Energia ok',
+  'contrato energia': 'Contrato Energia ok',
+  'contrato energia ok': 'Contrato Energia ok',
+  '1173301171': 'Perdido',
+  closedlost: 'Perdido',
+  perdido: 'Perdido',
+  lost: 'Perdido',
+  'fechado perdido': 'Perdido',
+  fechado_perdido: 'Perdido',
 };
 
 const statusFriendlyNames = new Map<string, string>();
@@ -199,8 +260,8 @@ const buildStatusSet = (stageKey: StageKey) => {
   return new Set(definition.statuses.map(status => normalizeStatus(status)));
 };
 
-export const closedWonStatusSet = buildStatusSet('fechado ganho');
-export const closedLostStatusSet = buildStatusSet('fechado perdido');
+export const closedWonStatusSet = buildStatusSet('nutricao');
+export const closedLostStatusSet = buildStatusSet('perdido');
 
 export const closedStatusSet = new Set<string>([
   ...Array.from(closedWonStatusSet),

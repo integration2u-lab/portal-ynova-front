@@ -13,6 +13,7 @@ import {
   RefreshCcw,
   User,
   X,
+  Search,
   type LucideIcon,
 } from 'lucide-react'
 import type { Lead, LeadInvoice } from '../../types'
@@ -21,14 +22,68 @@ import ModalUploadInvoice from '../../components/ModalUploadInvoice'
 import ModalUploadInvoiceToLead from '../../components/ModalUploadInvoiceToLead'
 
 const stageColors = [
-  'from-orange-500 to-orange-400',
   'from-sky-500 to-sky-400',
-  'from-purple-500 to-purple-400',
   'from-amber-500 to-amber-400',
+  'from-purple-500 to-purple-400',
   'from-indigo-500 to-indigo-400',
+  'from-orange-500 to-orange-400',
+  'from-cyan-500 to-cyan-400',
+  'from-blue-500 to-blue-400',
   'from-emerald-500 to-emerald-400',
+  'from-lime-500 to-lime-400',
+  'from-teal-500 to-teal-400',
   'from-rose-500 to-rose-400',
 ]
+
+const rawStatusFriendlyNames = {
+  appointmentscheduled: 'Prospecção',
+  novo: 'Prospecção',
+  prospeccao: 'Prospecção',
+  prospecting: 'Prospecção',
+  '1142458134': 'Fatura',
+  fatura: 'Fatura',
+  invoice: 'Fatura',
+  qualifiedtobuy: 'Qualificado',
+  qualificado: 'Qualificado',
+  qualificacao: 'Qualificado',
+  qualification: 'Qualificado',
+  '1142458135': 'Apresentação',
+  apresentacao: 'Apresentação',
+  apresentação: 'Apresentação',
+  'apresentacao realizada': 'Apresentação',
+  decisionmakerboughtin: 'Negociação',
+  negociacao: 'Negociação',
+  negotiacao: 'Negociação',
+  negotiation: 'Negociação',
+  presentationscheduled: 'Fechamento',
+  fechamento: 'Fechamento',
+  'fechamento agendado': 'Fechamento',
+  contractsent: 'Em assinatura',
+  emassinatura: 'Em assinatura',
+  'em assinatura': 'Em assinatura',
+  assinatura: 'Em assinatura',
+  closedwon: 'Nutrição',
+  nutricao: 'Nutrição',
+  nutrição: 'Nutrição',
+  nurturing: 'Nutrição',
+  fechado: 'Nutrição',
+  'fechado ganho': 'Nutrição',
+  fechado_ganho: 'Nutrição',
+  won: 'Nutrição',
+  ganho: 'Nutrição',
+  '1173301169': 'Contrato Gestão ok',
+  'contrato gestao': 'Contrato Gestão ok',
+  'contrato gestao ok': 'Contrato Gestão ok',
+  '1173301170': 'Contrato Energia ok',
+  'contrato energia': 'Contrato Energia ok',
+  'contrato energia ok': 'Contrato Energia ok',
+  '1173301171': 'Perdido',
+  closedlost: 'Perdido',
+  perdido: 'Perdido',
+  lost: 'Perdido',
+  'fechado perdido': 'Perdido',
+  fechado_perdido: 'Perdido',
+} as const
 
 const stageDefinitions = [
   {
@@ -38,40 +93,74 @@ const stageDefinitions = [
     statuses: ['appointmentscheduled', 'novo', 'prospeccao', 'prospecting'],
   },
   {
-    key: 'qualificacao',
-    label: 'Qualificação',
+    key: 'fatura',
+    label: 'Fatura',
+    badgeClass: 'bg-amber-100 text-amber-700',
+    statuses: ['1142458134', 'fatura', 'invoice'],
+  },
+  {
+    key: 'qualificado',
+    label: 'Qualificado',
     badgeClass: 'bg-purple-100 text-purple-700',
     statuses: ['qualifiedtobuy', 'qualificado', 'qualificacao', 'qualification'],
   },
   {
-    key: 'proposta enviada',
-    label: 'Proposta Enviada',
-    badgeClass: 'bg-amber-100 text-amber-700',
-    statuses: ['presentationscheduled', 'proposta', 'proposta enviada', 'proposal'],
+    key: 'apresentacao',
+    label: 'Apresentação',
+    badgeClass: 'bg-indigo-100 text-indigo-700',
+    statuses: ['1142458135', 'apresentacao', 'apresentação', 'apresentacao realizada'],
   },
   {
     key: 'negociacao',
     label: 'Negociação',
     badgeClass: 'bg-orange-100 text-orange-700',
-    statuses: ['decisionmakerboughtin', 'negociacao', 'negotiacao', 'negotiation'],
+    statuses: ['decisionmakerboughtin', 'negociacao', 'negociacao', 'negotiation'],
   },
   {
-    key: 'em assinatura',
+    key: 'fechamento',
+    label: 'Fechamento',
+    badgeClass: 'bg-cyan-100 text-cyan-700',
+    statuses: ['presentationscheduled', 'fechamento', 'fechamento agendado'],
+  },
+  {
+    key: 'em_assinatura',
     label: 'Em assinatura',
-    badgeClass: 'bg-indigo-100 text-indigo-700',
-    statuses: ['contractsent', 'emassinatura'],
+    badgeClass: 'bg-blue-100 text-blue-700',
+    statuses: ['contractsent', 'emassinatura', 'em assinatura', 'assinatura'],
   },
   {
-    key: 'fechado ganho',
-    label: 'Fechado (Ganho)',
+    key: 'nutricao',
+    label: 'Nutrição',
     badgeClass: 'bg-emerald-100 text-emerald-700',
-    statuses: ['closedwon', 'fechado', 'fechado ganho', 'fechado_ganho', 'won', 'ganho'],
+    statuses: [
+      'closedwon',
+      'nutricao',
+      'nutrição',
+      'nurturing',
+      'fechado',
+      'fechado ganho',
+      'fechado_ganho',
+      'won',
+      'ganho',
+    ],
   },
   {
-    key: 'fechado perdido',
-    label: 'Fechado (Perdido)',
+    key: 'contrato_gestao_ok',
+    label: 'Contrato Gestão ok',
+    badgeClass: 'bg-lime-100 text-lime-700',
+    statuses: ['1173301169', 'contrato gestao', 'contrato gestao ok'],
+  },
+  {
+    key: 'contrato_energia_ok',
+    label: 'Contrato Energia ok',
+    badgeClass: 'bg-teal-100 text-teal-700',
+    statuses: ['1173301170', 'contrato energia', 'contrato energia ok'],
+  },
+  {
+    key: 'perdido',
+    label: 'Perdido',
     badgeClass: 'bg-rose-100 text-rose-700',
-    statuses: ['closedlost', 'fechado perdido', 'fechado_perdido', 'lost', 'perdido'],
+    statuses: ['1173301171', 'closedlost', 'perdido', 'lost', 'fechado perdido', 'fechado_perdido'],
   },
 ] as const
 
@@ -116,12 +205,29 @@ const formatStatusLabel = (value: string) => {
 const stageOrderMap = new Map<string, StageDefinition>()
 const statusToStageName = new Map<string, StageDefinition>()
 
+const statusFriendlyNameMap = new Map<string, string>()
+
+Object.entries(rawStatusFriendlyNames).forEach(([status, label]) => {
+  statusFriendlyNameMap.set(normalizeStageName(status), label)
+})
+
 stageDefinitions.forEach(definition => {
   stageOrderMap.set(definition.label, definition)
-  statusToStageName.set(normalizeStageName(definition.label), definition)
+  const normalizedLabel = normalizeStageName(definition.label)
+  statusToStageName.set(normalizedLabel, definition)
+  statusFriendlyNameMap.set(normalizedLabel, definition.label)
   definition.statuses.forEach(status => {
-    statusToStageName.set(normalizeStageName(status), definition)
+    const normalizedStatus = normalizeStageName(status)
+    statusToStageName.set(normalizedStatus, definition)
   })
+})
+
+statusFriendlyNameMap.forEach((friendlyLabel, normalizedStatus) => {
+  const def = statusToStageName.get(normalizedStatus)
+  if (!def || !friendlyLabel) return
+
+  stageOrderMap.set(friendlyLabel, def)
+  statusToStageName.set(normalizeStageName(friendlyLabel), def)
 })
 
 const getStageDefinitionForStatus = (status: string) => {
@@ -134,6 +240,14 @@ const getStageDefinitionForStatus = (status: string) => {
 }
 
 const getStageNameForStatus = (status: string) => {
+
+  const normalized = normalizeStageName(status)
+  const friendlyLabel = statusFriendlyNameMap.get(normalized)
+  if (friendlyLabel) {
+    return friendlyLabel
+  }
+
+
   const definition = getStageDefinitionForStatus(status)
   if (definition) {
     return definition.label
@@ -380,6 +494,10 @@ const normalizeLead = (rawLead: any): Lead => {
 const buildPipelineFromLeads = (leads: Lead[]) => {
   const groupedByStage = new Map<string, { definition?: StageDefinition; leads: Lead[] }>()
 
+  stageDefinitions.forEach(definition => {
+    groupedByStage.set(definition.label, { definition, leads: [] })
+  })
+
   leads.forEach(lead => {
     const stageName = getStageNameForStatus(lead.status)
     const definition = stageOrderMap.get(stageName) ?? getStageDefinitionForStatus(lead.status)
@@ -509,6 +627,7 @@ export default function PipelineStatus() {
   const [isUploadInvoiceToLeadModalOpen, setIsUploadInvoiceToLeadModalOpen] = useState(false)
   const [selectedLeadForUpload, setSelectedLeadForUpload] = useState<Lead | null>(null)
   const [leadDetailsRefreshTrigger, setLeadDetailsRefreshTrigger] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const loadPipeline = useCallback(async (options?: { silent?: boolean }) => {
     const isSilent = options?.silent ?? false
@@ -589,6 +708,54 @@ export default function PipelineStatus() {
   const handleLeadClick = (stage: PipelineStage, lead: Lead) => {
     setSelectedLeadContext({ stage, lead })
   }
+
+
+const filteredStageLeads = useMemo(() => {
+    const term = searchTerm.trim()
+    if (!term) {
+      return stageLeads
+    }
+
+    const normalizeText = (value?: string | null) =>
+      (value ?? '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+    const normalizedTerm = normalizeText(term)
+    const matchesSearch = (lead: Lead) => {
+      const consultantName = lead.consultant
+        ? `${lead.consultant.name ?? ''} ${lead.consultant.surname ?? ''}`
+        : ''
+      const sources = Array.isArray(lead.source)
+        ? lead.source.join(' ')
+        : (lead.source ?? '')
+
+      const searchableContent = [
+        lead.name,
+        lead.consumer_unit,
+        lead.cnpj,
+        consultantName,
+        sources,
+        lead.month,
+        lead.year,
+      ]
+        .filter(Boolean)
+        .map(value => normalizeText(String(value)))
+        .join(' ')
+
+      return searchableContent.includes(normalizedTerm)
+    }
+
+    return Object.entries(stageLeads).reduce<Record<number, Lead[]>>(
+      (acc, [stageId, leadsInStage]) => {
+        acc[Number(stageId)] = leadsInStage.filter(matchesSearch)
+        return acc
+      },
+      {},
+    )
+  }, [searchTerm, stageLeads])
 
   const closeLeadDetails = () => setSelectedLeadContext(null)
 
@@ -684,13 +851,26 @@ export default function PipelineStatus() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1">
           <h2 className="text-xl font-bold text-gray-900">Status da Pipeline</h2>
           <p className="text-sm text-gray-500">
             Visualize rapidamente o volume de leads em cada etapa do funil de vendas.
           </p>
         </div>
+              <div className="w-full sm:max-w-xs">
+                <label className="relative block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={event => setSearchTerm(event.target.value)}
+              placeholder="Buscar leads..."
+              className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-gray-400 focus:border-[#ff6b35] focus:ring-2 focus:ring-[#ff6b35]/20"
+            />
+          </label>
+        </div>
+
         <button
           type="button"
           onClick={() => loadPipeline({ silent: true })}
@@ -728,7 +908,7 @@ export default function PipelineStatus() {
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {stages.map((stage, index) => {
-              const leadsInStage = stageLeads[stage.id] ?? []
+              const leadsInStage = filteredStageLeads[stage.id] ?? []
               return (
                 <div
                   key={stage.id}

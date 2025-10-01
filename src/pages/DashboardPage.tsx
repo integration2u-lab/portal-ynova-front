@@ -236,7 +236,7 @@ export default function DashboardPage() {
         <div className="bg-white dark:bg-[#3E3E3E] rounded-lg p-6 shadow-sm border border-gray-200 dark:border-[#1E1E1E]">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Distribuição por Status</h3>
           {chartData && chartData.segment_distribution.length > 0 ? (
-            <div className="h-64 flex flex-col justify-center">
+            <div className="max-h-72 overflow-y-auto pr-2">
               <div className="space-y-3">
                 {chartData.segment_distribution.map(segment => {
                   const colorClass = stageColorMap[segment.stageKey] || stageColorMap['outros'] || 'bg-gray-500';

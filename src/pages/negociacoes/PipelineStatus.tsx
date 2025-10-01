@@ -21,27 +21,67 @@ import ModalUploadInvoice from '../../components/ModalUploadInvoice'
 import ModalUploadInvoiceToLead from '../../components/ModalUploadInvoiceToLead'
 
 const stageColors = [
-  'from-orange-500 to-orange-400',
   'from-sky-500 to-sky-400',
-  'from-purple-500 to-purple-400',
   'from-amber-500 to-amber-400',
+  'from-purple-500 to-purple-400',
   'from-indigo-500 to-indigo-400',
+  'from-orange-500 to-orange-400',
+  'from-cyan-500 to-cyan-400',
+  'from-blue-500 to-blue-400',
   'from-emerald-500 to-emerald-400',
+  'from-lime-500 to-lime-400',
+  'from-teal-500 to-teal-400',
   'from-rose-500 to-rose-400',
 ]
 
 const rawStatusFriendlyNames = {
   appointmentscheduled: 'Prospecção',
+  novo: 'Prospecção',
+  prospeccao: 'Prospecção',
+  prospecting: 'Prospecção',
   '1142458134': 'Fatura',
+  fatura: 'Fatura',
+  invoice: 'Fatura',
   qualifiedtobuy: 'Qualificado',
+  qualificado: 'Qualificado',
+  qualificacao: 'Qualificado',
+  qualification: 'Qualificado',
   '1142458135': 'Apresentação',
+  apresentacao: 'Apresentação',
+  apresentação: 'Apresentação',
+  'apresentacao realizada': 'Apresentação',
   decisionmakerboughtin: 'Negociação',
+  negociacao: 'Negociação',
+  negotiacao: 'Negociação',
+  negotiation: 'Negociação',
   presentationscheduled: 'Fechamento',
+  fechamento: 'Fechamento',
+  'fechamento agendado': 'Fechamento',
   contractsent: 'Em assinatura',
+  emassinatura: 'Em assinatura',
+  'em assinatura': 'Em assinatura',
+  assinatura: 'Em assinatura',
   closedwon: 'Nutrição',
+  nutricao: 'Nutrição',
+  nutrição: 'Nutrição',
+  nurturing: 'Nutrição',
+  fechado: 'Nutrição',
+  'fechado ganho': 'Nutrição',
+  fechado_ganho: 'Nutrição',
+  won: 'Nutrição',
+  ganho: 'Nutrição',
   '1173301169': 'Contrato Gestão ok',
+  'contrato gestao': 'Contrato Gestão ok',
+  'contrato gestao ok': 'Contrato Gestão ok',
   '1173301170': 'Contrato Energia ok',
+  'contrato energia': 'Contrato Energia ok',
+  'contrato energia ok': 'Contrato Energia ok',
   '1173301171': 'Perdido',
+  closedlost: 'Perdido',
+  perdido: 'Perdido',
+  lost: 'Perdido',
+  'fechado perdido': 'Perdido',
+  fechado_perdido: 'Perdido',
 } as const
 
 const stageDefinitions = [
@@ -52,40 +92,74 @@ const stageDefinitions = [
     statuses: ['appointmentscheduled', 'novo', 'prospeccao', 'prospecting'],
   },
   {
-    key: 'qualificacao',
-    label: 'Qualificação',
+    key: 'fatura',
+    label: 'Fatura',
+    badgeClass: 'bg-amber-100 text-amber-700',
+    statuses: ['1142458134', 'fatura', 'invoice'],
+  },
+  {
+    key: 'qualificado',
+    label: 'Qualificado',
     badgeClass: 'bg-purple-100 text-purple-700',
     statuses: ['qualifiedtobuy', 'qualificado', 'qualificacao', 'qualification'],
   },
   {
-    key: 'proposta enviada',
-    label: 'Proposta Enviada',
-    badgeClass: 'bg-amber-100 text-amber-700',
-    statuses: ['presentationscheduled', 'proposta', 'proposta enviada', 'proposal'],
+    key: 'apresentacao',
+    label: 'Apresentação',
+    badgeClass: 'bg-indigo-100 text-indigo-700',
+    statuses: ['1142458135', 'apresentacao', 'apresentação', 'apresentacao realizada'],
   },
   {
     key: 'negociacao',
     label: 'Negociação',
     badgeClass: 'bg-orange-100 text-orange-700',
-    statuses: ['decisionmakerboughtin', 'negociacao', 'negotiacao', 'negotiation'],
+    statuses: ['decisionmakerboughtin', 'negociacao', 'negociacao', 'negotiation'],
   },
   {
-    key: 'em assinatura',
+    key: 'fechamento',
+    label: 'Fechamento',
+    badgeClass: 'bg-cyan-100 text-cyan-700',
+    statuses: ['presentationscheduled', 'fechamento', 'fechamento agendado'],
+  },
+  {
+    key: 'em_assinatura',
     label: 'Em assinatura',
-    badgeClass: 'bg-indigo-100 text-indigo-700',
-    statuses: ['contractsent', 'emassinatura'],
+    badgeClass: 'bg-blue-100 text-blue-700',
+    statuses: ['contractsent', 'emassinatura', 'em assinatura', 'assinatura'],
   },
   {
-    key: 'fechado ganho',
-    label: 'Fechado (Ganho)',
+    key: 'nutricao',
+    label: 'Nutrição',
     badgeClass: 'bg-emerald-100 text-emerald-700',
-    statuses: ['closedwon', 'fechado', 'fechado ganho', 'fechado_ganho', 'won', 'ganho'],
+    statuses: [
+      'closedwon',
+      'nutricao',
+      'nutrição',
+      'nurturing',
+      'fechado',
+      'fechado ganho',
+      'fechado_ganho',
+      'won',
+      'ganho',
+    ],
   },
   {
-    key: 'fechado perdido',
-    label: 'Fechado (Perdido)',
+    key: 'contrato_gestao_ok',
+    label: 'Contrato Gestão ok',
+    badgeClass: 'bg-lime-100 text-lime-700',
+    statuses: ['1173301169', 'contrato gestao', 'contrato gestao ok'],
+  },
+  {
+    key: 'contrato_energia_ok',
+    label: 'Contrato Energia ok',
+    badgeClass: 'bg-teal-100 text-teal-700',
+    statuses: ['1173301170', 'contrato energia', 'contrato energia ok'],
+  },
+  {
+    key: 'perdido',
+    label: 'Perdido',
     badgeClass: 'bg-rose-100 text-rose-700',
-    statuses: ['closedlost', 'fechado perdido', 'fechado_perdido', 'lost', 'perdido'],
+    statuses: ['1173301171', 'closedlost', 'perdido', 'lost', 'fechado perdido', 'fechado_perdido'],
   },
 ] as const
 
@@ -138,27 +212,22 @@ Object.entries(rawStatusFriendlyNames).forEach(([status, label]) => {
 
 stageDefinitions.forEach(definition => {
   stageOrderMap.set(definition.label, definition)
-  statusToStageName.set(normalizeStageName(definition.label), definition)
+  const normalizedLabel = normalizeStageName(definition.label)
+  statusToStageName.set(normalizedLabel, definition)
+  statusFriendlyNameMap.set(normalizedLabel, definition.label)
   definition.statuses.forEach(status => {
-    statusToStageName.set(normalizeStageName(status), definition)
+    const normalizedStatus = normalizeStageName(status)
+    statusToStageName.set(normalizedStatus, definition)
   })
 })
 
-const friendlyLabel = statusFriendlyNameMap.get(normalizeStageName(status));
-const definition = statusToStageName.get(normalizeStageName(status));
-
-if (friendlyLabel && definition) {
-  stageOrderMap.set(friendlyLabel, definition);
-  statusToStageName.set(normalizeStageName(friendlyLabel), definition);
-}
-
 statusFriendlyNameMap.forEach((friendlyLabel, normalizedStatus) => {
-  const def = statusToStageName.get(normalizedStatus);
-  if (!def || !friendlyLabel) return;
+  const def = statusToStageName.get(normalizedStatus)
+  if (!def || !friendlyLabel) return
 
-  stageOrderMap.set(friendlyLabel, def);
-  statusToStageName.set(normalizeStageName(friendlyLabel), def);
-});
+  stageOrderMap.set(friendlyLabel, def)
+  statusToStageName.set(normalizeStageName(friendlyLabel), def)
+})
 
 const getStageDefinitionForStatus = (status: string) => {
   if (!status) {
@@ -423,6 +492,10 @@ const normalizeLead = (rawLead: any): Lead => {
 
 const buildPipelineFromLeads = (leads: Lead[]) => {
   const groupedByStage = new Map<string, { definition?: StageDefinition; leads: Lead[] }>()
+
+  stageDefinitions.forEach(definition => {
+    groupedByStage.set(definition.label, { definition, leads: [] })
+  })
 
   leads.forEach(lead => {
     const stageName = getStageNameForStatus(lead.status)

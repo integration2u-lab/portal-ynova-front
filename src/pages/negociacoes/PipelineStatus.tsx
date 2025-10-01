@@ -13,6 +13,7 @@ import {
   RefreshCcw,
   User,
   X,
+  Search,
   type LucideIcon,
 } from 'lucide-react'
 import type { Lead, LeadInvoice } from '../../types'
@@ -626,6 +627,7 @@ export default function PipelineStatus() {
   const [isUploadInvoiceToLeadModalOpen, setIsUploadInvoiceToLeadModalOpen] = useState(false)
   const [selectedLeadForUpload, setSelectedLeadForUpload] = useState<Lead | null>(null)
   const [leadDetailsRefreshTrigger, setLeadDetailsRefreshTrigger] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const loadPipeline = useCallback(async (options?: { silent?: boolean }) => {
     const isSilent = options?.silent ?? false
@@ -706,6 +708,54 @@ export default function PipelineStatus() {
   const handleLeadClick = (stage: PipelineStage, lead: Lead) => {
     setSelectedLeadContext({ stage, lead })
   }
+
+
+const filteredStageLeads = useMemo(() => {
+    const term = searchTerm.trim()
+    if (!term) {
+      return stageLeads
+    }
+
+    const normalizeText = (value?: string | null) =>
+      (value ?? '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+    const normalizedTerm = normalizeText(term)
+    const matchesSearch = (lead: Lead) => {
+      const consultantName = lead.consultant
+        ? `${lead.consultant.name ?? ''} ${lead.consultant.surname ?? ''}`
+        : ''
+      const sources = Array.isArray(lead.source)
+        ? lead.source.join(' ')
+        : (lead.source ?? '')
+
+      const searchableContent = [
+        lead.name,
+        lead.consumer_unit,
+        lead.cnpj,
+        consultantName,
+        sources,
+        lead.month,
+        lead.year,
+      ]
+        .filter(Boolean)
+        .map(value => normalizeText(String(value)))
+        .join(' ')
+
+      return searchableContent.includes(normalizedTerm)
+    }
+
+    return Object.entries(stageLeads).reduce<Record<number, Lead[]>>(
+      (acc, [stageId, leadsInStage]) => {
+        acc[Number(stageId)] = leadsInStage.filter(matchesSearch)
+        return acc
+      },
+      {},
+    )
+  }, [searchTerm, stageLeads])
 
   const closeLeadDetails = () => setSelectedLeadContext(null)
 
@@ -801,13 +851,26 @@ export default function PipelineStatus() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1">
           <h2 className="text-xl font-bold text-gray-900">Status da Pipeline</h2>
           <p className="text-sm text-gray-500">
             Visualize rapidamente o volume de leads em cada etapa do funil de vendas.
           </p>
         </div>
+              <div className="w-full sm:max-w-xs">
+                <label className="relative block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={event => setSearchTerm(event.target.value)}
+              placeholder="Buscar leads..."
+              className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-gray-400 focus:border-[#ff6b35] focus:ring-2 focus:ring-[#ff6b35]/20"
+            />
+          </label>
+        </div>
+
         <button
           type="button"
           onClick={() => loadPipeline({ silent: true })}
@@ -845,7 +908,7 @@ export default function PipelineStatus() {
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {stages.map((stage, index) => {
-              const leadsInStage = stageLeads[stage.id] ?? []
+              const leadsInStage = filteredStageLeads[stage.id] ?? []
               return (
                 <div
                   key={stage.id}

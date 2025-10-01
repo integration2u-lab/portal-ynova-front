@@ -10,10 +10,14 @@ export default function HelpPage() {
           <HelpCircle className="mx-auto h-16 w-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Central de Ajuda</h3>
           <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Encontre respostas para suas dúvidas ou entre em contato conosco</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-6 py-3 rounded-lg font-medium w-full sm:w-auto">Abrir Ticket de Suporte</button>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium">Acessar FAQ</button>
-          </div>
+          <a
+  href="https://api.whatsapp.com/send/?phone=5511992774616&text=Quero+fazer+uma+pergunta+sobre+ser+consultor.%0A&type=phone_number&app_absent=0"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium inline-block"
+>
+  Acessar FAQ
+</a>
         </div>
       </div>
 

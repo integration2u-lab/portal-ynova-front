@@ -52,7 +52,7 @@ const RankingPage: React.FC = () => {
     <div className="min-h-screen">
       {/* header + breadcrumb são herdados do layout principal (AppShell) */}
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+      <div className="mx-auto w-full max-w-[140rem] px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-20 py-6">
         {/* Título da página */}
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-gray-900 md:text-3xl dark:text-gray-100">

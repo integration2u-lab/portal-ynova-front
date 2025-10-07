@@ -166,6 +166,11 @@ const stageDefinitions = [
 
 type StageDefinition = (typeof stageDefinitions)[number]
 
+const MAX_PIPELINE_STAGES = 11 as const
+const allowedStageDefinitions = stageDefinitions.slice(0, MAX_PIPELINE_STAGES) as StageDefinition[]
+const fallbackStageDefinition =
+  allowedStageDefinitions[allowedStageDefinitions.length - 1] ?? stageDefinitions[stageDefinitions.length - 1]
+
 type PipelineStage = {
   id: number
   stage: string
@@ -211,7 +216,7 @@ Object.entries(rawStatusFriendlyNames).forEach(([status, label]) => {
   statusFriendlyNameMap.set(normalizeStageName(status), label)
 })
 
-stageDefinitions.forEach(definition => {
+allowedStageDefinitions.forEach(definition => {
   stageOrderMap.set(definition.label, definition)
   const normalizedLabel = normalizeStageName(definition.label)
   statusToStageName.set(normalizedLabel, definition)
@@ -232,27 +237,31 @@ statusFriendlyNameMap.forEach((friendlyLabel, normalizedStatus) => {
 
 const getStageDefinitionForStatus = (status: string) => {
   if (!status) {
-    return undefined
+    return fallbackStageDefinition
   }
 
   const normalized = normalizeStageName(status)
-  return statusToStageName.get(normalized)
+  return statusToStageName.get(normalized) ?? fallbackStageDefinition
 }
 
 const getStageNameForStatus = (status: string) => {
-
   const normalized = normalizeStageName(status)
   const friendlyLabel = statusFriendlyNameMap.get(normalized)
+
   if (friendlyLabel) {
+    const mappedDefinition = stageOrderMap.get(friendlyLabel)
+    if (mappedDefinition) {
+      return mappedDefinition.label
+    }
     return friendlyLabel
   }
-
 
   const definition = getStageDefinitionForStatus(status)
   if (definition) {
     return definition.label
   }
-  return formatStatusLabel(status)
+
+  return fallbackStageDefinition.label
 }
 
 const getBadgeClassForStage = (stageName: string) => {
@@ -492,64 +501,37 @@ const normalizeLead = (rawLead: any): Lead => {
 }
 
 const buildPipelineFromLeads = (leads: Lead[]) => {
-  const groupedByStage = new Map<string, { definition?: StageDefinition; leads: Lead[] }>()
+  const leadsByStageKey = new Map<string, Lead[]>()
 
-  stageDefinitions.forEach(definition => {
-    groupedByStage.set(definition.label, { definition, leads: [] })
+  allowedStageDefinitions.forEach(definition => {
+    leadsByStageKey.set(definition.key, [])
   })
 
   leads.forEach(lead => {
-    const stageName = getStageNameForStatus(lead.status)
-    const definition = stageOrderMap.get(stageName) ?? getStageDefinitionForStatus(lead.status)
-    const key = stageName || 'Sem status'
+    const definition = stageOrderMap.get(getStageNameForStatus(lead.status)) ?? getStageDefinitionForStatus(lead.status)
+    const stageDefinition = definition ?? fallbackStageDefinition
+    const bucketKey = stageDefinition.key
 
-    if (!groupedByStage.has(key)) {
-      groupedByStage.set(key, { definition: definition ?? undefined, leads: [] })
+    if (!leadsByStageKey.has(bucketKey)) {
+      leadsByStageKey.set(bucketKey, [])
     }
 
-    groupedByStage.get(key)!.leads.push(lead)
+    leadsByStageKey.get(bucketKey)!.push(lead)
   })
-
-  const sortedEntries = Array.from(groupedByStage.entries())
-    .map(([stageName, value]) => {
-      const sortedLeads = value.leads.slice().sort((a, b) => {
-        const dateA = new Date(a.created_at).getTime()
-        const dateB = new Date(b.created_at).getTime()
-        return dateB - dateA
-      })
-
-      return {
-        stageName,
-        definition: value.definition,
-        leads: sortedLeads,
-      }
-    })
-    .sort((a, b) => {
-      const defA = stageOrderMap.get(a.stageName)
-      const defB = stageOrderMap.get(b.stageName)
-
-      if (defA && defB) {
-        return stageDefinitions.indexOf(defA) - stageDefinitions.indexOf(defB)
-      }
-
-      if (defA) {
-        return -1
-      }
-
-      if (defB) {
-        return 1
-      }
-
-      return a.stageName.localeCompare(b.stageName, 'pt-BR')
-    })
 
   const stages: PipelineStage[] = []
   const stageLeads: Record<number, Lead[]> = {}
 
-  sortedEntries.forEach((entry, index) => {
+  allowedStageDefinitions.forEach((definition, index) => {
     const stageId = index + 1
-    stages.push({ id: stageId, stage: entry.stageName, leads: entry.leads.length, definition: entry.definition })
-    stageLeads[stageId] = entry.leads
+    const leadsInStage = (leadsByStageKey.get(definition.key) ?? []).slice().sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime()
+      const dateB = new Date(b.created_at).getTime()
+      return dateB - dateA
+    })
+
+    stages.push({ id: stageId, stage: definition.label, leads: leadsInStage.length, definition })
+    stageLeads[stageId] = leadsInStage
   })
 
   return { stages, stageLeads }

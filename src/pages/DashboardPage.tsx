@@ -161,7 +161,7 @@ export default function DashboardPage() {
           color="green"
         />
         <KpiCard
-          title="Receita Potencial"
+          title="Comissão Potencial"
           value={formatCurrencyValue(dashboardStats?.receita_potencial ?? 0)}
           icon={DollarSign}
           color="orange"

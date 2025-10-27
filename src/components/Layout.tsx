@@ -18,11 +18,13 @@ import {
   Plus,
 } from 'lucide-react';
 import CrownIcon from './icons/CrownIcon';
+import MultinivelIcon from './icons/MultinivelIcon';
 import { User as UserType } from '../types';
 
 const navigation = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/negociacoes', label: 'Negociações', icon: Handshake },
+  { to: '/multinivel', label: 'Multinível', icon: MultinivelIcon },
   //{ to: '/agenda', label: 'Agenda', icon: Calendar },
   //{ to: '/proposals', label: 'Propostas', icon: FileText },
   //{ to: '/commissions', label: 'Comissões', icon: DollarSign },

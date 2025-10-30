@@ -6,7 +6,7 @@ interface VideoPlayerProps {
 
 export default function VideoPlayer({ videoId }: VideoPlayerProps) {
   return (
-    <div className="w-full aspect-video">
+    <div className="w-full aspect-video rounded-lg overflow-hidden">
       <iframe
         className="w-full h-full"
         src={`https://www.youtube.com/embed/${videoId}`}

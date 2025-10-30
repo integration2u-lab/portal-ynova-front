@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 import { ChevronDown, CheckCircle } from 'lucide-react';
 
+export interface Lesson {
+  id: string;
+  title: string;
+  subtitle: string;
+  videoUrl: string;
+  videoId: string;
+}
+
 export interface Module {
   title: string;
-  lessons: string[];
+  lessons: Lesson[];
 }
 
 interface TrainingSidebarProps {
@@ -33,16 +41,16 @@ export default function TrainingSidebar({
         <div key={module.title}>
           <button
             onClick={() => toggleModule(mIndex)}
-            className="w-full flex items-center justify-between px-4 py-2 text-left font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-[#1E1E1E]"
+            className="w-full flex items-center justify-between px-3 sm:px-4 py-2 text-left text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-[#1E1E1E]"
           >
-            {module.title}
+            <span className="truncate">{module.title}</span>
             <ChevronDown
               size={16}
-              className={`transition-transform ${openModule === mIndex ? 'rotate-180' : ''}`}
+              className={`transition-transform flex-shrink-0 ${openModule === mIndex ? 'rotate-180' : ''}`}
             />
           </button>
           {openModule === mIndex && (
-            <div className="px-4 py-2 space-y-1">
+            <div className="px-3 sm:px-4 py-2 space-y-1">
               {module.lessons.map((lesson, lIndex) => {
                 const id = `${mIndex}-${lIndex}`;
                 const isActive =
@@ -52,7 +60,7 @@ export default function TrainingSidebar({
                   <button
                     key={id}
                     onClick={() => onSelectLesson(mIndex, lIndex)}
-                    className={`w-full flex items-center text-left px-2 py-1 rounded-md text-sm ${
+                    className={`w-full flex items-center text-left px-2 py-1.5 rounded-md text-xs sm:text-sm ${
                       isActive
                         ? 'bg-[#FE5200]/10 text-[#FE5200] dark:bg-[#FE5200]/20 dark:text-[#FE5200]'
                         : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1E1E1E]'
@@ -65,7 +73,7 @@ export default function TrainingSidebar({
                       />
                     )}
                     {!isCompleted && <span className="w-4 mr-2" />}
-                    {lesson}
+                    <span className="truncate">{lesson.title}</span>
                   </button>
                 );
               })}

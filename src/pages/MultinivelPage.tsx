@@ -88,24 +88,31 @@ const getCurrentLevel = (points: number) => {
   return 1;
 };
 
-const NavButton = ({ icon: Icon, label, active, onClick }: {
-  icon: React.ComponentType<{ className?: string }>;
+function TabBtn({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: any;
   label: string;
   active: boolean;
   onClick: () => void;
-}) => (
-  <button 
-    onClick={onClick}
-    className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all whitespace-nowrap font-medium ${
-      active 
-        ? 'bg-[#FE5200]/10 text-[#FE5200] border-b-2 border-[#FE5200] dark:bg-[#FE5200]/20 dark:text-[#FE5200]' 
-        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1f252b]'
-    }`}
-  >
-    <Icon className="w-4 h-4" />
-    <span className="text-sm">{label}</span>
-  </button>
-);
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex shrink-0 items-center gap-2 border-b-2 px-2 py-3 text-sm font-semibold ${
+        active
+          ? "border-[#ff6b35] text-[#ff6b35]"
+          : "border-transparent text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      <Icon size={18} />
+      <span className="whitespace-nowrap">{label}</span>
+    </button>
+  );
+}
 
 const NetworkMap = () => {
   const [selectedNode, setSelectedNode] = useState<any>(null);
@@ -468,7 +475,7 @@ const Bonuses = () => {
 };
 
 export default function MultinivelPage() {
-  const [currentPage, setCurrentPage] = useState('network');
+  const [currentPage, setCurrentPage] = useState<'network' | 'network-map' | 'bonuses'>('network');
   const [userPoints, setUserPoints] = useState(0);
 
   useEffect(() => {
@@ -479,33 +486,52 @@ export default function MultinivelPage() {
   const currentLevel = getCurrentLevel(userPoints);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto w-full max-w-[140rem] px-4 sm:px-6 lg:px-10 xl:px-14 2xl:px-16">
+      {/* Título */}
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Multinível</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Sistema de rede e comissões</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 md:text-3xl dark:text-gray-100">Multinível</h1>
+          <p className="text-sm text-gray-500 md:text-base dark:text-gray-300">
+            Sistema de rede e comissões
+          </p>
         </div>
         <div className="flex items-center space-x-2 text-sm bg-white dark:bg-[#1a1f24] rounded-full px-4 py-2 border border-gray-200 dark:border-[#2b3238]">
-          <Award className="w-5 h-5 text-[#FE5200]" />
+          <Award className="w-5 h-5 text-[#ff6b35]" />
           <span className="font-semibold text-gray-800 dark:text-gray-100">{userPoints.toLocaleString('pt-BR')} pontos</span>
         </div>
       </div>
 
-      <nav className="bg-white dark:bg-[#3E3E3E] border-b border-gray-200 dark:border-[#1E1E1E] shadow-sm rounded-lg">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 py-2 overflow-x-auto">
-            <NavButton icon={Share2} label="Rede" active={currentPage === 'network'} onClick={() => setCurrentPage('network')} />
-            <NavButton icon={GitBranch} label="Visualização da Rede" active={currentPage === 'network-map'} onClick={() => setCurrentPage('network-map')} />
-            <NavButton icon={Gift} label="Comissões" active={currentPage === 'bonuses'} onClick={() => setCurrentPage('bonuses')} />
-          </div>
+      {/* Tabs */}
+      <div className="rounded-xl bg-white shadow">
+        <div className="overflow-x-auto border-b border-gray-200">
+          <nav className="flex gap-4 px-4">
+            <TabBtn
+              icon={Share2}
+              label="Rede"
+              active={currentPage === 'network'}
+              onClick={() => setCurrentPage('network')}
+            />
+            <TabBtn
+              icon={GitBranch}
+              label="Visualização da Rede"
+              active={currentPage === 'network-map'}
+              onClick={() => setCurrentPage('network-map')}
+            />
+            <TabBtn
+              icon={Gift}
+              label="Comissões"
+              active={currentPage === 'bonuses'}
+              onClick={() => setCurrentPage('bonuses')}
+            />
+          </nav>
         </div>
-      </nav>
 
-      <main>
-        {currentPage === 'network' && <Network userPoints={userPoints} currentLevel={currentLevel} />}
-        {currentPage === 'network-map' && <NetworkMap />}
-        {currentPage === 'bonuses' && <Bonuses />}
-      </main>
+        <div className="p-4 md:p-6">
+          {currentPage === 'network' && <Network userPoints={userPoints} currentLevel={currentLevel} />}
+          {currentPage === 'network-map' && <NetworkMap />}
+          {currentPage === 'bonuses' && <Bonuses />}
+        </div>
+      </div>
     </div>
   );
 }

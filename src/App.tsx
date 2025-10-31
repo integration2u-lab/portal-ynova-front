@@ -49,7 +49,7 @@ export default function App() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  // Check if user is already authenticated on app load with verify
+  // Check if user is already authenticated on app load
   useEffect(() => {
     const token = localStorage.getItem('token');
 

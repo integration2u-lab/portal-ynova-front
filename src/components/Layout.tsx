@@ -16,6 +16,9 @@ import {
   GraduationCap,
   Handshake,
   Plus,
+  ChevronLeft,
+  ChevronRight,
+  Download,
 } from 'lucide-react';
 import CrownIcon from './icons/CrownIcon';
 import MultinivelIcon from './icons/MultinivelIcon';
@@ -46,6 +49,7 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,37 +82,48 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#111418] dark:text-gray-100">
+    <div className="h-screen flex flex-col bg-gray-50 text-gray-900 dark:bg-[#111418] dark:text-gray-100 overflow-hidden">
       <header
         role="banner"
-        className="sticky top-0 z-40 h-16 bg-[#FE5200] text-white shadow-sm px-4 md:px-6"
+        className="flex-shrink-0 z-40 h-16 bg-[#FE5200] text-white shadow-sm px-4 md:px-6"
       >
         <div className="flex items-center justify-between h-full">
-          <NavLink
-            to="/dashboard"
-            aria-label="Ir para a página inicial"
-            className="flex items-center gap-2"
-          >
-            {logoError ? (
-              <span className="font-semibold text-white">YNOVA</span>
-            ) : (
-              <img
-                src="https://i.imgur.com/eFBlDDM.png"
-                alt="YNOVA"
-                className="h-40 md:h-40 w-auto"
-                loading="eager"
-                onError={() => setLogoError(true)}
-              />
-            )}
-          </NavLink>
+          <div className="flex items-center gap-2">
+            <NavLink
+              to="/dashboard"
+              aria-label="Ir para a página inicial"
+              className="flex items-center gap-2"
+            >
+              {logoError ? (
+                <span className="font-semibold text-white">YNOVA</span>
+              ) : (
+                <img
+                  src="https://i.imgur.com/eFBlDDM.png"
+                  alt="YNOVA"
+                  className="h-40 md:h-40 w-auto"
+                  loading="eager"
+                  onError={() => setLogoError(true)}
+                />
+              )}
+            </NavLink>
+            <button
+              className="hidden md:flex p-2 rounded-md text-white hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+              aria-label={isSidebarCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              title={isSidebarCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+            >
+              {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            </button>
+          </div>
           <div className="flex items-center gap-4">
             <button
-              className="p-2 rounded-md text-white hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-              aria-label="Adicionar negociação"
+              className="px-3 py-2 rounded-md text-white hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 flex items-center gap-2"
+              aria-label="Enviar Fatura"
               onClick={handleAddNegociacao}
-              title="Adicionar negociação"
+              title="Enviar Fatura"
             >
-              <Plus size={20} />
+              <Download size={18} />
+              <span className="hidden sm:inline">Enviar Fatura</span>
             </button>
             <div className="relative" ref={notifRef}>
               <button
@@ -179,10 +194,12 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
         </div>
       </header>
 
-      <div className="flex">
-        <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:top-16">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <aside className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 md:top-16 transition-all duration-300 ${
+          isSidebarCollapsed ? 'md:w-16' : 'md:w-64'
+        }`}>
           <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#1a1f24] border-r border-gray-200 dark:border-[#2b3238]">
-            <nav className="flex-1 px-4 py-4 space-y-1">
+            <nav className="flex-1 px-2 py-4 space-y-1 overflow-hidden">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -190,26 +207,38 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
                     key={item.to}
                     to={item.to}
                     className={({ isActive }) =>
-                      `w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      `w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2 text-sm font-medium rounded-lg transition-colors group relative ${
                         isActive
                           ? 'bg-[#FE5200]/10 text-[#FE5200] border border-[#FE5200]/40 dark:bg-[#FE5200]/20 dark:text-[#FE5200] dark:border-[#FE5200]/40'
                           : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-[#1f252b]'
                       }`
                     }
+                    title={isSidebarCollapsed ? item.label : undefined}
                   >
-                    <Icon size={20} className="mr-3" />
-                    {item.label}
+                    <Icon size={20} className={isSidebarCollapsed ? '' : 'mr-3'} />
+                    {!isSidebarCollapsed && <span>{item.label}</span>}
+                    {isSidebarCollapsed && (
+                      <span className="absolute left-full ml-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                        {item.label}
+                      </span>
+                    )}
                   </NavLink>
                 );
               })}
             </nav>
-            <div className="p-4 border-t border-gray-200 dark:border-[#2b3238]">
+            <div className={`border-t border-gray-200 dark:border-[#2b3238] ${isSidebarCollapsed ? 'p-2' : 'p-4'} flex-shrink-0`}>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors"
+                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'px-3'} py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors group relative`}
+                title={isSidebarCollapsed ? 'Sair' : undefined}
               >
-                <LogOut size={20} className="mr-3" />
-                Sair
+                <LogOut size={20} className={isSidebarCollapsed ? '' : 'mr-3'} />
+                {!isSidebarCollapsed && <span>Sair</span>}
+                {isSidebarCollapsed && (
+                  <span className="absolute left-full ml-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                    Sair
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -259,8 +288,8 @@ export default function Layout({ onLogout, theme, toggleTheme, user }: LayoutPro
           </div>
         )}
 
-        <main className="flex-1 md:ml-64">
-          <div className="w-full max-w-[115rem] mx-auto px-4 sm:px-6 lg:px-10 overflow-x-hidden py-4 sm:py-6 lg:py-8">
+        <main className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <div className="flex-1 flex flex-col min-h-0 w-full max-w-[115rem] mx-auto px-4 sm:px-6 lg:px-10 overflow-x-hidden py-4 sm:py-6 lg:py-8">
             <Outlet />
           </div>
         </main>

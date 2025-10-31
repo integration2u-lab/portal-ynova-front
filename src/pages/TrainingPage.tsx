@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TrainingSidebar, { Module } from '../components/TrainingSidebar';
 import VideoPlayer from '../components/VideoPlayer';
 import StudyMaterials from '../components/StudyMaterials';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Helper function to extract YouTube video ID
 const extractVideoId = (url: string): string => {
@@ -319,6 +320,7 @@ export default function TrainingPage() {
   const [currentModule, setCurrentModule] = useState(0);
   const [currentLesson, setCurrentLesson] = useState(0);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const totalLessons = modules.reduce((sum, m) => sum + m.lessons.length, 0);
 
@@ -387,85 +389,90 @@ export default function TrainingPage() {
   const currentLessonData = modules[currentModule]?.lessons[currentLesson];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-9rem)] -mx-4 sm:-mx-6 lg:-mx-10 -mt-4 sm:-mt-6 lg:-mt-8">
-      <div className="px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6 lg:pt-8 mb-2 sm:mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Treinamento para Consultor Ynova</h1>
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
+      <div className="flex-shrink-0 mb-2 hidden md:block">
+        <h1 className="text-base font-semibold text-gray-900 dark:text-white">Treinamento para Consultor Ynova</h1>
       </div>
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-        <div className="hidden md:block">
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden gap-4">
+        <div className={`hidden md:flex md:flex-shrink-0 md:h-full transition-all duration-300 relative ${
+          isSidebarCollapsed ? 'md:w-16' : 'md:w-64 lg:w-72'
+        }`}>
           <TrainingSidebar
             modules={modules}
             currentModule={currentModule}
             currentLesson={currentLesson}
             onSelectLesson={handleSelectLesson}
             completedLessons={completedLessons}
+            isCollapsed={isSidebarCollapsed}
           />
+          <button
+            className="hidden md:flex items-center justify-center w-6 h-12 absolute right-0 top-4 -mr-3 z-10 bg-white dark:bg-[#3E3E3E] border border-gray-200 dark:border-[#1E1E1E] rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2E2E2E] transition-colors shadow-sm"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            aria-label={isSidebarCollapsed ? "Expandir módulos" : "Recolher módulos"}
+            title={isSidebarCollapsed ? "Expandir módulos" : "Recolher módulos"}
+          >
+            {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10">
-          <header className="sticky top-0 z-10 bg-white dark:bg-[#3E3E3E] p-3 sm:p-4 shadow mb-4 -mx-4 sm:-mx-6 lg:-mx-10">
-            <div className="px-4 sm:px-6 lg:px-10">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
-                <div className="font-semibold text-sm sm:text-base truncate">
-                  {modules[currentModule]?.title} → {currentLessonData?.title}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {currentLessonData && (
+              <div className="bg-white dark:bg-[#3E3E3E] rounded-lg shadow-md p-4 sm:p-6 mb-4 max-w-4xl mx-auto">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  {currentLessonData.title}
+                </h2>
+                {currentLessonData.subtitle && (
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-4">
+                    {currentLessonData.subtitle}
+                  </p>
+                )}
+                <VideoPlayer videoId={currentLessonData.videoId} />
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mb-4">
+              <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
+                <button
+                  onClick={handlePrev}
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg w-full sm:w-auto transition-colors text-sm sm:text-base"
+                >
+                  ← Anterior
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={isLastLesson}
+                  className={`bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full sm:w-auto transition-colors text-sm sm:text-base ${isLastLesson ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Próximo →
+                </button>
+              </div>
+              <div className="flex-1 sm:flex-initial flex items-center gap-2 w-full sm:w-48 min-w-0">
+                <div className="flex-1 bg-gray-200 dark:bg-[#1E1E1E] rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full bg-[#FE5200] transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  ></div>
                 </div>
-                <div className="flex-1 md:ml-4 min-w-0">
-                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-1">Progresso: {progress}%</div>
-                  <div className="w-full bg-gray-200 dark:bg-[#1E1E1E] rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full bg-[#FE5200]"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                </div>
+                <span className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">{progress}%</span>
               </div>
             </div>
-          </header>
 
-          {currentLessonData && (
-            <div className="bg-white dark:bg-[#3E3E3E] rounded-lg shadow-md p-4 sm:p-6 mb-4">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                {currentLessonData.title}
-              </h2>
-              {currentLessonData.subtitle && (
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-4">
-                  {currentLessonData.subtitle}
-                </p>
-              )}
-              <VideoPlayer videoId={currentLessonData.videoId} />
+            <div className="mb-4">
+              <StudyMaterials />
             </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
-            <button
-              onClick={handlePrev}
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg w-full sm:w-auto transition-colors text-sm sm:text-base"
-            >
-              ← Anterior
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={isLastLesson}
-              className={`bg-[#FE5200] hover:bg-[#FE5200]/90 text-white px-4 py-2 rounded-lg w-full sm:w-auto transition-colors text-sm sm:text-base ${isLastLesson ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              Próximo →
-            </button>
-          </div>
-
-          <div className="mb-4">
-            <StudyMaterials />
-          </div>
-
-          <div className="mb-4 md:hidden">
-            <TrainingSidebar
-              modules={modules}
-              currentModule={currentModule}
-              currentLesson={currentLesson}
-              onSelectLesson={handleSelectLesson}
-              completedLessons={completedLessons}
-            />
           </div>
         </div>
+      </div>
+
+      <div className="md:hidden mt-4">
+        <TrainingSidebar
+          modules={modules}
+          currentModule={currentModule}
+          currentLesson={currentLesson}
+          onSelectLesson={handleSelectLesson}
+          completedLessons={completedLessons}
+        />
       </div>
     </div>
   );

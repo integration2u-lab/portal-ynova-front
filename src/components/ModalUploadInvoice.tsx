@@ -20,6 +20,20 @@ interface FormData {
   energy_value: string;
   invoice_amount: string;
   observations: string;
+  // Gerador questions
+  hasGenerator: 'S' | 'N' | '';
+  generatorMonthlyCost: string;
+  generatorMonthlyGeneration: string;
+  // Geração Solar questions
+  hasSolarGeneration: 'S' | 'N' | '';
+  isSolarGenerationSameUnit: 'S' | 'N' | '';
+  // B Optante questions
+  isBOptante: 'S' | 'N' | '';
+  hasGroupAInfrastructure: 'S' | 'N' | '';
+  companyActivityArea: string;
+  // Mercado Livre questions
+  isInFreeMarket: 'S' | 'N' | '';
+  contractEndDate: string;
 }
 
 export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: ModalUploadInvoiceProps) {
@@ -37,11 +51,21 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
     energy_value: '',
     invoice_amount: '',
     observations: '',
+    hasGenerator: '',
+    generatorMonthlyCost: '',
+    generatorMonthlyGeneration: '',
+    hasSolarGeneration: '',
+    isSolarGenerationSameUnit: '',
+    isBOptante: '',
+    hasGroupAInfrastructure: '',
+    companyActivityArea: '',
+    isInFreeMarket: '',
+    contractEndDate: '',
   });
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
+    const newErrors: Partial<Record<keyof FormData, string>> = {};
 
     if (!formData.consumer_unit.trim()) {
       newErrors.consumer_unit = 'Unidade consumidora é obrigatória';
@@ -62,6 +86,20 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'E-mail deve ter um formato válido';
     }
+    // Validate required Yes/No questions
+    if (!formData.hasGenerator) {
+      newErrors.hasGenerator = 'Esta pergunta é obrigatória';
+    }
+    if (!formData.hasSolarGeneration) {
+      newErrors.hasSolarGeneration = 'Esta pergunta é obrigatória';
+    }
+    if (!formData.isBOptante) {
+      newErrors.isBOptante = 'Esta pergunta é obrigatória';
+    }
+    if (!formData.isInFreeMarket) {
+      newErrors.isInFreeMarket = 'Esta pergunta é obrigatória';
+    }
+    
     if (!formData.month.trim()) {
       newErrors.month = 'Mês é obrigatório';
     }
@@ -77,6 +115,37 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
       newErrors.invoice_amount = 'Valor da fatura é obrigatório';
     } else if (isNaN(parseFloat(formData.invoice_amount)) || parseFloat(formData.invoice_amount) <= 0) {
       newErrors.invoice_amount = 'Valor da fatura deve ser um número positivo';
+    }
+
+    // Validate conditional fields
+    if (formData.hasGenerator === 'S') {
+      if (!formData.generatorMonthlyCost.trim()) {
+        newErrors.generatorMonthlyCost = 'Gasto por mês é obrigatório quando utiliza gerador';
+      } else if (isNaN(parseFloat(formData.generatorMonthlyCost)) || parseFloat(formData.generatorMonthlyCost) <= 0) {
+        newErrors.generatorMonthlyCost = 'Gasto por mês deve ser um número positivo';
+      }
+      if (!formData.generatorMonthlyGeneration.trim()) {
+        newErrors.generatorMonthlyGeneration = 'Geração mensal (kWh) é obrigatória quando utiliza gerador';
+      } else if (isNaN(parseFloat(formData.generatorMonthlyGeneration)) || parseFloat(formData.generatorMonthlyGeneration) <= 0) {
+        newErrors.generatorMonthlyGeneration = 'Geração mensal deve ser um número positivo';
+      }
+    }
+
+    if (formData.hasSolarGeneration === 'S' && !formData.isSolarGenerationSameUnit) {
+      newErrors.isSolarGenerationSameUnit = 'Esta pergunta é obrigatória quando tem geração solar';
+    }
+
+    if (formData.isBOptante === 'S') {
+      if (formData.hasGroupAInfrastructure === '') {
+        newErrors.hasGroupAInfrastructure = 'Esta pergunta é obrigatória quando é B Optante';
+      }
+      if (!formData.companyActivityArea.trim()) {
+        newErrors.companyActivityArea = 'Área de atuação é obrigatória quando é B Optante';
+      }
+    }
+
+    if (formData.isInFreeMarket === 'S' && !formData.contractEndDate.trim()) {
+      newErrors.contractEndDate = 'Data de término do contrato é obrigatória quando já está no Mercado Livre';
     }
 
     setErrors(newErrors);
@@ -166,7 +235,54 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
       formDataToSend.append('year', formData.year);
       formDataToSend.append('energy_value', formData.energy_value);
       formDataToSend.append('invoice_amount', formData.invoice_amount);
-      formDataToSend.append('observations', formData.observations);
+      
+      // Add conditional fields to observations or as separate fields
+      let observationsText = formData.observations;
+      
+      // Build additional info text
+      const additionalInfo: string[] = [];
+      
+      if (formData.hasGenerator) {
+        additionalInfo.push(`Utiliza Gerador: ${formData.hasGenerator}`);
+        if (formData.hasGenerator === 'S') {
+          additionalInfo.push(`Gasto mensal gerador: R$ ${formData.generatorMonthlyCost}`);
+          additionalInfo.push(`Geração mensal gerador: ${formData.generatorMonthlyGeneration} kWh`);
+        }
+      }
+      
+      if (formData.hasSolarGeneration) {
+        additionalInfo.push(`Tem Geração Solar: ${formData.hasSolarGeneration}`);
+        if (formData.hasSolarGeneration === 'S' && formData.isSolarGenerationSameUnit) {
+          additionalInfo.push(`Geração na mesma unidade: ${formData.isSolarGenerationSameUnit}`);
+        }
+      }
+      
+      if (formData.isBOptante) {
+        additionalInfo.push(`É B Optante: ${formData.isBOptante}`);
+        if (formData.isBOptante === 'S') {
+          if (formData.hasGroupAInfrastructure) {
+            additionalInfo.push(`Tem infraestrutura Grupo A: ${formData.hasGroupAInfrastructure}`);
+          }
+          if (formData.companyActivityArea) {
+            additionalInfo.push(`Área de atuação: ${formData.companyActivityArea}`);
+          }
+        }
+      }
+      
+      if (formData.isInFreeMarket) {
+        additionalInfo.push(`Já está no Mercado Livre: ${formData.isInFreeMarket}`);
+        if (formData.isInFreeMarket === 'S' && formData.contractEndDate) {
+          additionalInfo.push(`Término do contrato: ${formData.contractEndDate}`);
+        }
+      }
+      
+      if (additionalInfo.length > 0) {
+        observationsText = observationsText 
+          ? `${observationsText}\n\nInformações Adicionais:\n${additionalInfo.join('\n')}`
+          : `Informações Adicionais:\n${additionalInfo.join('\n')}`;
+      }
+      
+      formDataToSend.append('observations', observationsText);
       formDataToSend.append('status', 'appointmentscheduled'); // Set default status
 
       const response = await apiRequestWithAuth('/leads', {
@@ -203,6 +319,16 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
       energy_value: '',
       invoice_amount: '',
       observations: '',
+      hasGenerator: '',
+      generatorMonthlyCost: '',
+      generatorMonthlyGeneration: '',
+      hasSolarGeneration: '',
+      isSolarGenerationSameUnit: '',
+      isBOptante: '',
+      hasGroupAInfrastructure: '',
+      companyActivityArea: '',
+      isInFreeMarket: '',
+      contractEndDate: '',
     });
     setErrors({});
     onClose();
@@ -496,6 +622,324 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
                     <AlertCircle size={12} className="mr-1" />
                     {errors.invoice_amount}
                   </p>
+                )}
+              </div>
+            </div>
+
+            {/* Conditional Questions Section */}
+            <div className="space-y-6 pt-4 border-t border-gray-200 dark:border-[#1E1E1E]">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Informações Adicionais</h3>
+              
+              {/* Gerador Question */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  O cliente utiliza Gerador? *
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="hasGenerator"
+                      value="S"
+                      checked={formData.hasGenerator === 'S'}
+                      onChange={(e) => handleInputChange('hasGenerator', e.target.value)}
+                      className="text-[#FE5200] focus:ring-[#FE5200]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Sim</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="hasGenerator"
+                      value="N"
+                      checked={formData.hasGenerator === 'N'}
+                      onChange={(e) => handleInputChange('hasGenerator', e.target.value)}
+                      className="text-[#FE5200] focus:ring-[#FE5200]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Não</span>
+                  </label>
+                </div>
+                {errors.hasGenerator && (
+                  <p className="text-red-500 text-xs flex items-center">
+                    <AlertCircle size={12} className="mr-1" />
+                    {errors.hasGenerator}
+                  </p>
+                )}
+                {formData.hasGenerator === 'S' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Qual o gasto por mês em R$? *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.generatorMonthlyCost}
+                        onChange={(e) => handleInputChange('generatorMonthlyCost', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                          errors.generatorMonthlyCost ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
+                        }`}
+                        placeholder="0.00"
+                        min="0"
+                      />
+                      {errors.generatorMonthlyCost && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center">
+                          <AlertCircle size={12} className="mr-1" />
+                          {errors.generatorMonthlyCost}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Quanto gera por mês (kWh)? *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.generatorMonthlyGeneration}
+                        onChange={(e) => handleInputChange('generatorMonthlyGeneration', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                          errors.generatorMonthlyGeneration ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
+                        }`}
+                        placeholder="0.00"
+                        min="0"
+                      />
+                      {errors.generatorMonthlyGeneration && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center">
+                          <AlertCircle size={12} className="mr-1" />
+                          {errors.generatorMonthlyGeneration}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Geração Solar Question */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  O cliente tem Geração Solar? *
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="hasSolarGeneration"
+                      value="S"
+                      checked={formData.hasSolarGeneration === 'S'}
+                      onChange={(e) => handleInputChange('hasSolarGeneration', e.target.value)}
+                      className="text-[#FE5200] focus:ring-[#FE5200]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Sim</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="hasSolarGeneration"
+                      value="N"
+                      checked={formData.hasSolarGeneration === 'N'}
+                      onChange={(e) => handleInputChange('hasSolarGeneration', e.target.value)}
+                      className="text-[#FE5200] focus:ring-[#FE5200]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Não</span>
+                  </label>
+                </div>
+                {errors.hasSolarGeneration && (
+                  <p className="text-red-500 text-xs flex items-center">
+                    <AlertCircle size={12} className="mr-1" />
+                    {errors.hasSolarGeneration}
+                  </p>
+                )}
+                {formData.hasSolarGeneration === 'S' && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      A geração é nesta mesma unidade? *
+                    </label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="isSolarGenerationSameUnit"
+                          value="S"
+                          checked={formData.isSolarGenerationSameUnit === 'S'}
+                          onChange={(e) => handleInputChange('isSolarGenerationSameUnit', e.target.value)}
+                          className="text-[#FE5200] focus:ring-[#FE5200]"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Sim</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="isSolarGenerationSameUnit"
+                          value="N"
+                          checked={formData.isSolarGenerationSameUnit === 'N'}
+                          onChange={(e) => handleInputChange('isSolarGenerationSameUnit', e.target.value)}
+                          className="text-[#FE5200] focus:ring-[#FE5200]"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Não</span>
+                      </label>
+                    </div>
+                    {errors.isSolarGenerationSameUnit && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center">
+                        <AlertCircle size={12} className="mr-1" />
+                        {errors.isSolarGenerationSameUnit}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* B Optante Question */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  O cliente é B Optante? *
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isBOptante"
+                      value="S"
+                      checked={formData.isBOptante === 'S'}
+                      onChange={(e) => handleInputChange('isBOptante', e.target.value)}
+                      className="text-[#FE5200] focus:ring-[#FE5200]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Sim</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isBOptante"
+                      value="N"
+                      checked={formData.isBOptante === 'N'}
+                      onChange={(e) => handleInputChange('isBOptante', e.target.value)}
+                      className="text-[#FE5200] focus:ring-[#FE5200]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Não</span>
+                  </label>
+                </div>
+                {errors.isBOptante && (
+                  <p className="text-red-500 text-xs flex items-center">
+                    <AlertCircle size={12} className="mr-1" />
+                    {errors.isBOptante}
+                  </p>
+                )}
+                {formData.isBOptante === 'S' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Tem infraestrutura de grupo A (transformador próprio)? *
+                      </label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="hasGroupAInfrastructure"
+                            value="S"
+                            checked={formData.hasGroupAInfrastructure === 'S'}
+                            onChange={(e) => handleInputChange('hasGroupAInfrastructure', e.target.value)}
+                            className="text-[#FE5200] focus:ring-[#FE5200]"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Sim</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="hasGroupAInfrastructure"
+                            value="N"
+                            checked={formData.hasGroupAInfrastructure === 'N'}
+                            onChange={(e) => handleInputChange('hasGroupAInfrastructure', e.target.value)}
+                            className="text-[#FE5200] focus:ring-[#FE5200]"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Não</span>
+                        </label>
+                      </div>
+                      {errors.hasGroupAInfrastructure && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center">
+                          <AlertCircle size={12} className="mr-1" />
+                          {errors.hasGroupAInfrastructure}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Qual a área de atuação da empresa? *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.companyActivityArea}
+                        onChange={(e) => handleInputChange('companyActivityArea', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                          errors.companyActivityArea ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
+                        }`}
+                        placeholder="Ex: Indústria, Comércio, Serviços..."
+                      />
+                      {errors.companyActivityArea && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center">
+                          <AlertCircle size={12} className="mr-1" />
+                          {errors.companyActivityArea}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mercado Livre Question */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  O cliente já está no Mercado Livre? *
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isInFreeMarket"
+                      value="S"
+                      checked={formData.isInFreeMarket === 'S'}
+                      onChange={(e) => handleInputChange('isInFreeMarket', e.target.value)}
+                      className="text-[#FE5200] focus:ring-[#FE5200]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Sim</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isInFreeMarket"
+                      value="N"
+                      checked={formData.isInFreeMarket === 'N'}
+                      onChange={(e) => handleInputChange('isInFreeMarket', e.target.value)}
+                      className="text-[#FE5200] focus:ring-[#FE5200]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Não</span>
+                  </label>
+                </div>
+                {errors.isInFreeMarket && (
+                  <p className="text-red-500 text-xs flex items-center">
+                    <AlertCircle size={12} className="mr-1" />
+                    {errors.isInFreeMarket}
+                  </p>
+                )}
+                {formData.isInFreeMarket === 'S' && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Quando acaba o contrato? *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.contractEndDate}
+                      onChange={(e) => handleInputChange('contractEndDate', e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                        errors.contractEndDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
+                      }`}
+                    />
+                    {errors.contractEndDate && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center">
+                        <AlertCircle size={12} className="mr-1" />
+                        {errors.contractEndDate}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

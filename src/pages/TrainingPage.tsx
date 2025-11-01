@@ -18,8 +18,8 @@ const modules: Module[] = [
         id: '1.1',
         title: '1.1 Seja Bem-Vindo!',
         subtitle: 'Alice no País das Maravilhas: Para onde vai?',
-        videoUrl: 'https://youtu.be/CQw_upKpLmc',
-        videoId: extractVideoId('https://youtu.be/CQw_upKpLmc'),
+        videoUrl: 'https://www.youtube.com/watch?v=mqn4JHL8YVw',
+        videoId: extractVideoId('https://www.youtube.com/watch?v=mqn4JHL8YVw'),
       },
       {
         id: '1.2',

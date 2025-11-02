@@ -14,6 +14,7 @@ import RankingPage from "./pages/RankingPage"; // ajuste o caminho conforme sua 
 import HelpPage from './pages/HelpPage';
 import LoginPage from './pages/LoginPage';
 import TrainingPage from './pages/TrainingPage';
+import MultinivelPage from './pages/MultinivelPage';
 import { apiRequest } from './utils/api';
 import { User } from './types';
 import Negociacoes from './pages/Negociacoes';
@@ -48,7 +49,7 @@ export default function App() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  // Check if user is already authenticated on app load with verify
+  // Check if user is already authenticated on app load
   useEffect(() => {
     const token = localStorage.getItem('token');
 
@@ -178,6 +179,7 @@ export default function App() {
                 <Route path="profile" element={<ProfilePage user={user} onUserUpdate={setUser} />} />
                 <Route path="ranking" element={<RankingPage />} />
                 <Route path="training" element={<TrainingPage />} />
+                <Route path="multinivel" element={<MultinivelPage />} />
                 {/* <Route path="notifications" element={<NotificationsPage />} /> */}
                 <Route path="help" element={<HelpPage />} />
                 {/*

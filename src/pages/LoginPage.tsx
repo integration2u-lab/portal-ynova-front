@@ -13,6 +13,9 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
 
   const [tab, setTab] = useState<'login' | 'register' | 'confirm'>('login');
 
+  // Terms modal visibility
+  const [showTermsModal, setShowTermsModal] = useState(false);
+
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
@@ -83,37 +86,36 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateRegistration = (): boolean => {
     setRegError('');
-    
-    // Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(regEmail)) {
       setRegError('E-mail inválido');
-      return;
+      return false;
     }
     if (regPassword.length < 8 || !/\d/.test(regPassword)) {
       setRegError('Senha deve ter ao menos 8 caracteres e números');
-      return;
+      return false;
     }
     if (regPassword !== regConfirm) {
       setRegError('As senhas não são iguais');
-      return;
+      return false;
     }
     if (!regName.trim()) {
       setRegError('Nome é obrigatório');
-      return;
+      return false;
     }
     if (!regSurname.trim()) {
       setRegError('Sobrenome é obrigatório');
-      return;
+      return false;
     }
+    return true;
+  };
 
+  const performRegistration = async () => {
     setRegIsLoading(true);
     try {
       const { registerUser } = await import('../utils/api');
-      
       await registerUser({
         email: regEmail,
         password: regPassword,
@@ -127,7 +129,6 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
         birth_date: regBirthDate || undefined,
         pix_key: regPixKey || undefined,
       });
-      
       setTab('confirm');
     } catch (error) {
       console.error('Registration error:', error);
@@ -135,6 +136,14 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
     } finally {
       setRegIsLoading(false);
     }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateRegistration()) {
+      return;
+    }
+    setShowTermsModal(true);
   };
 
   const renderLogin = () => (
@@ -411,6 +420,65 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
 
         {tab === 'login' && renderLogin()}
         {tab === 'register' && renderRegister()}
+        {showTermsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">TERMO DE ACEITE E CONSENTIMENTO PARA CADASTRO DE CONSULTOR(A) YNOVA</h2>
+              </div>
+              <div className="p-6 space-y-4 text-gray-800 dark:text-gray-200">
+                <p>Pelo presente instrumento, o(a) usuário(a), ao prosseguir com o processo de cadastro na plataforma Ynova, declara, de forma livre, informada e inequívoca, que leu, compreendeu e aceita integralmente os termos e condições estabelecidos neste Termo de Aceite e na Política de Privacidade da empresa YNOVA, doravante denominada “Ynova”.</p>
+                <h3 className="font-semibold">1. Consentimento para Tratamento de Dados Pessoais</h3>
+                <p>O(a) usuário(a) autoriza expressamente a coleta, o armazenamento, o uso, o tratamento e o compartilhamento de seus dados pessoais pela Ynova, conforme disposto na Lei nº 13.709/2018 – Lei Geral de Proteção de Dados Pessoais (LGPD), para as seguintes finalidades:</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>Realização e validação do cadastro como consultor(a) Ynova;</li>
+                  <li>Comunicação institucional, envio de informações, materiais e treinamentos relacionados à atuação como consultor(a);</li>
+                  <li>Cumprimento de obrigações legais, regulatórias e contratuais;</li>
+                  <li>Fins estatísticos e de melhoria dos serviços prestados pela Ynova.</li>
+                </ul>
+                <h3 className="font-semibold">2. Direitos do Titular dos Dados</h3>
+                <p>O(a) usuário(a) declara estar ciente de que possui todos os direitos assegurados pela LGPD, incluindo:</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>O direito de acessar, corrigir, atualizar ou excluir seus dados pessoais;</li>
+                  <li>O direito de revogar o consentimento a qualquer momento, mediante solicitação expressa;</li>
+                  <li>O direito de solicitar informações sobre o uso e o compartilhamento de seus dados.</li>
+                </ul>
+                <p>As solicitações poderão ser realizadas por meio dos canais oficiais de atendimento da Ynova.</p>
+                <h3 className="font-semibold">3. Condição para Cadastro</h3>
+                <p>O(a) usuário(a) reconhece que o fornecimento dos dados pessoais é condição indispensável para a conclusão do cadastro e para sua participação no programa de consultores Ynova, compreendendo que a recusa em fornecer ou autorizar o uso dos dados inviabiliza o registro e o acesso à plataforma.</p>
+                <h3 className="font-semibold">4. Declaração de Vontade</h3>
+                <p>Ao aceitar este termo, o(a) usuário(a):</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>Declara ter lido e compreendido integralmente o conteúdo deste documento;</li>
+                  <li>Manifesta de forma expressa sua vontade de se tornar consultor(a) Ynova;</li>
+                  <li>Concorda com o tratamento de seus dados pessoais nos termos aqui descritos e na Política de Privacidade;</li>
+                  <li>Reconhece a validade jurídica deste aceite eletrônico, o qual substitui qualquer outra forma de assinatura, nos termos da legislação vigente.</li>
+                </ul>
+                <p>Ao clicar em “Li e aceito os termos”, o(a) usuário(a) confirma seu consentimento e autoriza a finalização do cadastro como consultor(a) Ynova.</p>
+              </div>
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(false)}
+                  className="w-full sm:w-auto border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium py-2 px-4 rounded-md"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={regIsLoading}
+                  onClick={async () => {
+                    setShowTermsModal(false);
+                    await performRegistration();
+                  }}
+                  className="w-full sm:w-auto bg-[#FE5200] hover:bg-[#FE5200]/90 disabled:bg-[#FE5200]/50 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center"
+                >
+                  {regIsLoading ? <RefreshCw className="animate-spin" size={20} /> : 'Li e aceito os termos'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {tab === 'confirm' && renderConfirm()}
 
         {tab === 'login' && (

@@ -41,7 +41,7 @@ docker build -t ynova-portal-frontend .
 docker run -p 8080:80 -e VITE_API_BASE_URL=http://localhost:3001/api ynova-portal-frontend
 
 # AWS EC2
-docker run -p 8080:80 -e VITE_API_BASE_URL=http://ec2-18-116-166-24.us-east-2.compute.amazonaws.com:3001/api ynova-portal-frontend
+docker run -p 8080:80 -e VITE_API_BASE_URL=https://api.ynovamarketplace.com.br ynova-portal-frontend
 ```
 
 ### Docker Build Arguments
@@ -53,7 +53,7 @@ You can also pass the API URL as a build argument:
 docker build --build-arg VITE_API_BASE_URL=http://localhost:3001/api -t ynova-portal-frontend .
 
 # Build with EC2 URL
-docker build --build-arg VITE_API_BASE_URL=http://ec2-18-116-166-24.us-east-2.compute.amazonaws.com:3001/api -t ynova-portal-frontend .
+docker build --build-arg VITE_API_BASE_URL=https://api.ynovamarketplace.com.br -t ynova-portal-frontend .
 
 # Run the container
 docker run -p 8080:80 ynova-portal-frontend
@@ -66,9 +66,6 @@ For production deployment:
 ```bash
 # Build for production
 docker build --build-arg VITE_API_BASE_URL=https://api.ynovamarketplace.com.br -t ynova-portal-frontend:prod .
-
-# Run in production
-docker run -p 80:80 ynova-portal-frontend:prod
 ```
 
 ## AWS ECR Deployment

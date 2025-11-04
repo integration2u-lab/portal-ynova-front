@@ -16,10 +16,11 @@ import {
   Search,
   type LucideIcon,
 } from 'lucide-react'
-import type { Lead, LeadInvoice } from '../../types'
-import { getLeads, getLeadInvoices } from '../../utils/api'
+import type { Lead, LeadInvoice, LeadDocument } from '../../types'
+import { getLeads, getLeadInvoices, getLeadDocuments, getLeadDocumentSignedUrl } from '../../utils/api'
 import ModalUploadInvoice from '../../components/ModalUploadInvoice'
 import ModalUploadInvoiceToLead from '../../components/ModalUploadInvoiceToLead'
+import ModalUploadDocumentToLead from '../../components/ModalUploadDocumentToLead'
 
 const stageColors = [
   'from-sky-500 to-sky-400',
@@ -497,8 +498,10 @@ const normalizeLead = (rawLead: any): Lead => {
     source: rawLead?.source ?? rawLead?.origem ?? '',
     consultant,
     lead_invoices: Array.isArray(rawLead?.lead_invoices) ? rawLead.lead_invoices : [],
+    lead_documents: Array.isArray(rawLead?.lead_documents) ? rawLead.lead_documents : [],
   }
 }
+
 
 const buildPipelineFromLeads = (leads: Lead[]) => {
   const leadsByStageKey = new Map<string, Lead[]>()
@@ -608,6 +611,11 @@ export default function PipelineStatus() {
   const [selectedLeadForInvoices, setSelectedLeadForInvoices] = useState<Lead | null>(null)
   const [isUploadInvoiceToLeadModalOpen, setIsUploadInvoiceToLeadModalOpen] = useState(false)
   const [selectedLeadForUpload, setSelectedLeadForUpload] = useState<Lead | null>(null)
+  const [isLeadDocumentModalOpen, setIsLeadDocumentModalOpen] = useState(false)
+  const [selectedLeadDocuments, setSelectedLeadDocuments] = useState<LeadDocument[]>([])
+  const [selectedLeadForDocuments, setSelectedLeadForDocuments] = useState<Lead | null>(null)
+  const [isUploadDocumentToLeadModalOpen, setIsUploadDocumentToLeadModalOpen] = useState(false)
+  const [selectedLeadForDocumentUpload, setSelectedLeadForDocumentUpload] = useState<Lead | null>(null)
   const [leadDetailsRefreshTrigger, setLeadDetailsRefreshTrigger] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -801,6 +809,74 @@ const filteredStageLeads = useMemo(() => {
     }
   }
 
+  const handleOpenLeadDocuments = async (lead: Lead) => {
+    try {
+      setSelectedLeadForDocuments(lead)
+      setError(null)
+      
+      // Load documents for this lead
+      const response = await getLeadDocuments(lead.id)
+      if (response.success) {
+        // Fetch signed URLs for each document
+        const documentsWithSignedUrls = await Promise.all(
+          response.data.map(async (doc: LeadDocument) => {
+            if (!doc.signed_url) {
+              try {
+                const signedUrlResponse = await getLeadDocumentSignedUrl(doc.id)
+                if (signedUrlResponse.success && signedUrlResponse.data?.signed_url) {
+                  return { ...doc, signed_url: signedUrlResponse.data.signed_url }
+                }
+              } catch (err) {
+                console.error(`Error fetching signed URL for document ${doc.id}:`, err)
+              }
+            }
+            return doc
+          })
+        )
+        setSelectedLeadDocuments(documentsWithSignedUrls)
+        setIsLeadDocumentModalOpen(true)
+      } else {
+        setError('Falha ao carregar documentos')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao carregar documentos')
+    }
+  }
+
+  const handleCloseLeadDocumentModal = () => {
+    setIsLeadDocumentModalOpen(false)
+    setSelectedLeadDocuments([])
+    setSelectedLeadForDocuments(null)
+  }
+
+  const handleOpenUploadDocumentToLead = (lead: Lead) => {
+    setSelectedLeadForDocumentUpload(lead)
+    setIsUploadDocumentToLeadModalOpen(true)
+  }
+
+  const handleCloseUploadDocumentToLead = () => {
+    setIsUploadDocumentToLeadModalOpen(false)
+    setSelectedLeadForDocumentUpload(null)
+  }
+
+  const handleUploadDocumentToLeadSuccess = () => {
+    // Auto-refresh the pipeline after successful document upload
+    loadPipeline({ silent: true })
+    
+    // Trigger refresh of lead details modal if it's open
+    setLeadDetailsRefreshTrigger(prev => prev + 1)
+  }
+
+  const handleOpenDocumentFile = (document: LeadDocument) => {
+    // Use signed URL if available, otherwise fall back to storage URL
+    const url = document.signed_url || document.storage_url
+    if (url) {
+      window.open(url, '_blank')
+    } else {
+      setError('URL do arquivo não disponível')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -934,6 +1010,7 @@ const filteredStageLeads = useMemo(() => {
                       leads={leadsInStage}
                       onLeadClick={lead => handleLeadClick(stage, lead)}
                       onOpenInvoices={handleOpenLeadInvoices}
+                      onOpenDocuments={handleOpenLeadDocuments}
                     />
                   )}
                 </div>
@@ -981,6 +1058,9 @@ const filteredStageLeads = useMemo(() => {
           onClose={closeLeadDetails}
           onOpenFile={handleOpenFile}
           onUploadInvoice={handleOpenUploadInvoiceToLead}
+          onOpenDocuments={handleOpenLeadDocuments}
+          onUploadDocument={handleOpenUploadDocumentToLead}
+          onOpenDocumentFile={handleOpenDocumentFile}
           refreshTrigger={leadDetailsRefreshTrigger}
         />
       )}
@@ -1081,6 +1161,89 @@ const filteredStageLeads = useMemo(() => {
           leadName={selectedLeadForUpload.name}
         />
       )}
+
+      {/* Lead Documents Modal */}
+      {isLeadDocumentModalOpen && selectedLeadForDocuments && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Documentos - {selectedLeadForDocuments.name}
+                </h2>
+                <p className="text-sm text-gray-600">
+                  {selectedLeadForDocuments.consumer_unit} • {selectedLeadForDocuments.cnpj}
+                </p>
+              </div>
+              <button
+                onClick={handleCloseLeadDocumentModal}
+                className="text-gray-500 transition-colors hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {selectedLeadDocuments.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Nenhum documento encontrado para este lead.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {selectedLeadDocuments.map((document) => (
+                  <div
+                    key={document.id}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className={`h-8 w-8 ${document.signed_url ? 'text-green-600' : 'text-gray-400'}`} />
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {document.filename_normalized || document.filename_original}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 mr-2">
+                            {document.document_type}
+                          </span>
+                          {new Date(document.created_at).toLocaleDateString("pt-BR")}
+                          {!document.signed_url && (
+                            <span className="ml-2 text-red-500 text-xs">(Arquivo não disponível)</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenDocumentFile(document)}
+                        disabled={!document.signed_url}
+                        className={`flex items-center gap-2 rounded-lg border px-4 py-2 transition-colors ${
+                          document.signed_url 
+                            ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
+                            : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <ExternalLink size={16} />
+                        Abrir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Upload Document to Lead Modal */}
+      {isUploadDocumentToLeadModalOpen && selectedLeadForDocumentUpload && (
+        <ModalUploadDocumentToLead
+          isOpen={isUploadDocumentToLeadModalOpen}
+          onClose={handleCloseUploadDocumentToLead}
+          onSuccess={handleUploadDocumentToLeadSuccess}
+          leadId={selectedLeadForDocumentUpload.id}
+          leadName={selectedLeadForDocumentUpload.name}
+        />
+      )}
     </div>
   )
 }
@@ -1107,10 +1270,12 @@ function StageLeadList({
   leads,
   onLeadClick,
   onOpenInvoices,
+  onOpenDocuments,
 }: {
   leads: Lead[]
   onLeadClick: (lead: Lead) => void
   onOpenInvoices: (lead: Lead) => void
+  onOpenDocuments: (lead: Lead) => void
 }) {
   if (!leads.length) {
     return (
@@ -1135,9 +1300,9 @@ function StageLeadList({
                 className="text-left w-full"
               >
                 <div className="relative group">
-                  <p className="truncate text-base font-semibold text-gray-900 cursor-pointer" title={lead.name}>
+                  <div className="truncate text-base font-semibold text-gray-900 cursor-pointer" title={lead.name}>
                     {lead.name}
-                  </p>
+                  </div>
                   {/* Tooltip for full company name */}
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap max-w-xs">
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
@@ -1175,22 +1340,37 @@ function StageLeadList({
                 ))}
           </div>
           
-          {/* Invoice section */}
-          {lead.lead_invoices && lead.lead_invoices.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onOpenInvoices(lead)
-                }}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
-              >
-                <FileText size={16} />
-                <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
-              </button>
+          {/* Invoice and Document section */}
+          {(lead.lead_invoices && lead.lead_invoices.length > 0) || (lead.lead_documents && lead.lead_documents.length > 0) ? (
+            <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
+              {lead.lead_invoices && lead.lead_invoices.length > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onOpenInvoices(lead)
+                  }}
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
+                >
+                  <FileText size={16} />
+                  <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
+                </button>
+              )}
+              {lead.lead_documents && lead.lead_documents.length > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onOpenDocuments(lead)
+                  }}
+                  className="flex items-center gap-2 text-green-600 hover:text-green-800 transition-colors text-sm font-medium"
+                >
+                  <FileText size={16} />
+                  <span>{lead.lead_documents.length} documento{lead.lead_documents.length > 1 ? 's' : ''}</span>
+                </button>
+              )}
             </div>
-          )}
+          ) : null}
           
         </div>
       ))}
@@ -1204,6 +1384,9 @@ function LeadDetailsModal({
   onClose,
   onOpenFile,
   onUploadInvoice,
+  onOpenDocuments,
+  onUploadDocument,
+  onOpenDocumentFile,
   refreshTrigger,
 }: {
   lead: Lead
@@ -1211,10 +1394,15 @@ function LeadDetailsModal({
   onClose: () => void
   onOpenFile: (invoice: LeadInvoice) => void
   onUploadInvoice: (lead: Lead) => void
+  onOpenDocuments: (lead: Lead) => Promise<void>
+  onUploadDocument: (lead: Lead) => void
+  onOpenDocumentFile: (document: LeadDocument) => void
   refreshTrigger?: number
 }) {
   const [invoices, setInvoices] = useState<LeadInvoice[]>([])
   const [loadingInvoices, setLoadingInvoices] = useState(false)
+  const [documents, setDocuments] = useState<LeadDocument[]>([])
+  const [loadingDocuments, setLoadingDocuments] = useState(false)
   
   const statusInfo = getStatusDisplay(lead.status)
   const sources = lead.source
@@ -1246,6 +1434,46 @@ function LeadDetailsModal({
 
     loadInvoices()
   }, [lead.id, lead.lead_invoices, refreshTrigger])
+
+  // Load documents with signed URLs when modal opens or when refreshTrigger changes
+  useEffect(() => {
+    const loadDocuments = async () => {
+      setLoadingDocuments(true)
+      try {
+        const response = await getLeadDocuments(lead.id)
+        if (response.success) {
+          // Fetch signed URLs for each document
+          const documentsWithSignedUrls = await Promise.all(
+            response.data.map(async (doc: LeadDocument) => {
+              if (!doc.signed_url) {
+                try {
+                  const signedUrlResponse = await getLeadDocumentSignedUrl(doc.id)
+                  if (signedUrlResponse.success && signedUrlResponse.data?.signed_url) {
+                    return { ...doc, signed_url: signedUrlResponse.data.signed_url }
+                  }
+                } catch (err) {
+                  console.error(`Error fetching signed URL for document ${doc.id}:`, err)
+                }
+              }
+              return doc
+            })
+          )
+          setDocuments(documentsWithSignedUrls)
+        } else {
+          // Fallback to the original documents if API call fails
+          setDocuments(lead.lead_documents || [])
+        }
+      } catch (error) {
+        console.error('Error loading documents:', error)
+        // Fallback to the original documents if API call fails
+        setDocuments(lead.lead_documents || [])
+      } finally {
+        setLoadingDocuments(false)
+      }
+    }
+
+    loadDocuments()
+  }, [lead.id, lead.lead_documents, refreshTrigger])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
@@ -1362,6 +1590,63 @@ function LeadDetailsModal({
             ) : (
               <div className="text-center py-4 text-sm text-gray-500">
                 Nenhuma fatura enviada ainda
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <FileText className="h-4 w-4 text-green-600" />
+                Documentos enviados
+                {loadingDocuments && (
+                  <span className="text-xs text-gray-500">(carregando...)</span>
+                )}
+              </p>
+              <button
+                onClick={() => onUploadDocument(lead)}
+                className="flex items-center gap-1 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-700"
+                title="Adicionar novo documento"
+              >
+                <Plus className="h-3 w-3" />
+                Adicionar
+              </button>
+            </div>
+            {documents.length > 0 ? (
+              <div className="space-y-2">
+                {documents.map(document => (
+                  <div
+                    key={document.id}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className={`h-4 w-4 flex-shrink-0 ${document.signed_url ? 'text-green-600' : 'text-gray-400'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate font-medium">{document.filename_normalized || document.filename_original}</div>
+                        <div className="text-xs text-gray-500">{document.document_type}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <button
+                        onClick={() => onOpenDocumentFile(document)}
+                        disabled={!document.signed_url}
+                        className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                          document.signed_url 
+                            ? 'text-green-600 hover:text-green-800' 
+                            : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                        title={document.signed_url ? "Abrir arquivo" : "Arquivo não disponível"}
+                      >
+                        <ExternalLink size={14} />
+                        Abrir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-sm text-gray-500">
+                Nenhum documento enviado ainda
               </div>
             )}
           </div>

@@ -29,6 +29,7 @@ export type Lead = {
     email: string;
   };
   lead_invoices?: LeadInvoice[];
+  lead_documents?: LeadDocument[];
 };
 
 export type LeadInvoice = {
@@ -40,6 +41,19 @@ export type LeadInvoice = {
   signed_url?: string;
   invoice_amount: string;
   extracted_data: any;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+};
+
+export type LeadDocument = {
+  id: string;
+  lead_id: string;
+  filename_original: string;
+  filename_normalized: string;
+  storage_url: string;
+  signed_url?: string;
+  document_type: string;
   created_at: string;
   updated_at: string;
   deleted_at?: string;

@@ -4,12 +4,6 @@ const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 // Debug function to check authentication status
 export const checkAuthStatus = () => {
   const token = localStorage.getItem('token');
-  console.log('Auth Status Check:', {
-    hasToken: !!token,
-    tokenLength: token?.length || 0,
-    tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token',
-    localStorageKeys: Object.keys(localStorage)
-  });
   return !!token;
 };
 
@@ -41,14 +35,6 @@ export const apiRequestWithAuth = async (
 ): Promise<Response> => {
   const token = localStorage.getItem('token');
   
-  // Debug logging
-  console.log('API Request Debug:', {
-    endpoint,
-    token: token ? `${token.substring(0, 20)}...` : 'No token found',
-    hasToken: !!token,
-    options: options
-  });
-  
   if (!token) {
     throw new Error('No authentication token found. Please log in again.');
   }
@@ -61,7 +47,6 @@ export const apiRequestWithAuth = async (
     },
   };
 
-  console.log('Auth options prepared:', authOptions);
   return apiRequest(endpoint, authOptions);
 };
 
@@ -78,8 +63,6 @@ export const updateUserProfile = async (userId: string, userData: {
   birth_date?: string | null;
   pix_key?: string | null;
 }) => {
-  console.log('updateUserProfile called with:', { userId, userData });
-  
   const response = await apiRequestWithAuth(`/users/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
@@ -292,6 +275,80 @@ export const deleteLeadInvoice = async (invoiceId: string) => {
   return response.json();
 };
 
+// Lead Document API functions
+export const uploadLeadDocument = async (leadId: string, file: File, documentType: string) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('document_type', documentType);
+
+  const response = await fetch(`${API_BASE_URL}/leads/${leadId}/documents`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to upload document');
+  }
+
+  return response.json();
+};
+
+export const getLeadDocuments = async (leadId: string) => {
+  const response = await apiRequestWithAuth(`/leads/${leadId}/documents`);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to fetch documents');
+  }
+
+  return response.json();
+};
+
+export const getLeadDocumentSignedUrl = async (documentId: string) => {
+  const response = await apiRequestWithAuth(`/leads/documents/${documentId}/signed-url`);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to get document signed URL');
+  }
+
+  return response.json();
+};
+
+export const deleteLeadDocument = async (documentId: string) => {
+  const response = await apiRequestWithAuth(`/leads/documents/${documentId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to delete document');
+  }
+
+  return response.json();
+};
+
+export const createDocumentExternal = async (leadId: string, data: any) => {
+  const response = await apiRequestWithAuth(`/leads/${leadId}/documents/external`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to create document via external API');
+  }
+
+  return response.json();
+};
+
 // Register user function
 export const registerUser = async (userData: {
   email: string;
@@ -312,8 +369,6 @@ export const registerUser = async (userData: {
     role: 'consultant',
     client_id: null
   };
-
-  console.log('registerUser called with:', registerData);
   
   const response = await apiRequest('/auth/register', {
     method: 'POST',

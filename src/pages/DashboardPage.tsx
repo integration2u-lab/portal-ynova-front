@@ -64,6 +64,20 @@ const formatPercentageValue = (value: number | null | undefined) => {
   return `${formatted}%`;
 };
 
+const ALLOWED_STATUSES = [
+  'Prospecção',
+  'Fatura',
+  'Qualificado',
+  'Apresentação',
+  'Negociação',
+  'Fechamento',
+  'Em assinatura',
+  'Nutrição',
+  'Contrato Gestão ok',
+  'Contrato Energia ok',
+  'Perdido',
+];
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, isAdmin } = useUser();
@@ -238,35 +252,37 @@ export default function DashboardPage() {
           {chartData && chartData.segment_distribution.length > 0 ? (
             <div className="max-h-72 overflow-y-auto pr-2">
               <div className="space-y-3">
-                {chartData.segment_distribution.map(segment => {
-                  const colorClass = stageColorMap[segment.stageKey] || stageColorMap['outros'] || 'bg-gray-500';
-                  const stageLabel = segment.stageLabel?.trim() ?? '';
-                  const showStageLabel = stageLabel && stageLabel.toLowerCase() !== segment.label.toLowerCase();
+                {chartData.segment_distribution
+                  .filter(segment => ALLOWED_STATUSES.includes(segment.label))
+                  .map(segment => {
+                    const colorClass = stageColorMap[segment.stageKey] || stageColorMap['outros'] || 'bg-gray-500';
+                    const stageLabel = segment.stageLabel?.trim() ?? '';
+                    const showStageLabel = stageLabel && stageLabel.toLowerCase() !== segment.label.toLowerCase();
 
-                  return (
-                    <div
-                      key={`${segment.stageKey}-${segment.status}`}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
-                        <div className="flex flex-col">
-                          <span className="text-sm text-gray-600 dark:text-gray-300">
-                            {segment.label}
-                          </span>
-                          {showStageLabel && (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">
-                              {stageLabel}
+                    return (
+                      <div
+                        key={`${segment.stageKey}-${segment.status}`}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full ${colorClass}`}></div>
+                          <div className="flex flex-col">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">
+                              {segment.label}
                             </span>
-                          )}
+                            {showStageLabel && (
+                              <span className="text-xs text-gray-400 dark:text-gray-500">
+                                {stageLabel}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {formatNumberValue(segment.count)}
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {formatNumberValue(segment.count)}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
           ) : (

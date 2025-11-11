@@ -382,3 +382,85 @@ export const registerUser = async (userData: {
 
   return response.json();
 };
+
+// PPT Generation API functions
+export const downloadFileAsBase64 = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to download file');
+    }
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        // Remove the data URL prefix (e.g., "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,")
+        const base64Content = base64String.split(',')[1];
+        resolve(base64Content);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    throw new Error('Failed to download and convert file to base64');
+  }
+};
+
+export const extractPptDataFromExcel = async (arquivoBase64: string) => {
+  const PPT_API_URL = 'http://localhost:3001/api/ppt/extract';
+  
+  const response = await fetch(PPT_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ arquivoBase64 }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Failed to extract PPT data' }));
+    throw new Error(errorData.error || 'Failed to extract PPT data from Excel');
+  }
+
+  return response.json();
+};
+
+export const generatePptPresentation = async (pptData: any) => {
+  const N8N_WEBHOOK_URL = 'https://n8n.ynovamarketplace.com/webhook/cria-ppt';
+  
+  const response = await fetch(N8N_WEBHOOK_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(pptData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Failed to generate presentation' }));
+    throw new Error(errorData.error || 'Failed to generate PowerPoint presentation');
+  }
+
+  return response.json();
+};
+
+// DocuSign API functions
+export const sendDocuSignEnvelope = async (payload: any) => {
+  const DOCUSIGN_API_URL = 'http://localhost:3001/api/docusign/send-docusign-envelope';
+  
+  const response = await fetch(DOCUSIGN_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Failed to send DocuSign envelope' }));
+    throw new Error(errorData.error || 'Failed to send contract for signature');
+  }
+
+  return response.json();
+};

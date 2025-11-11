@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, X, FileText, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiRequestWithAuth } from '../utils/api';
@@ -7,18 +7,197 @@ interface ModalUploadInvoiceProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (lead: any) => void;
+  onRefreshRequest?: () => void;
 }
 
+// Expose checkPendingOcrJobs as a standalone function for external use
+export const checkAndUpdatePendingOcrJobs = async () => {
+  try {
+    // Import getLeads function dynamically
+    const { getLeads, apiRequestWithAuth } = await import('../utils/api');
+    
+    // Fetch all leads to check for pending OCR jobs
+    const leadsData = await getLeads();
+    console.log('API Response:', leadsData);
+    
+    // Handle different possible response structures
+    let leads = [];
+    if (Array.isArray(leadsData)) {
+      leads = leadsData;
+    } else if (leadsData.data?.leads && Array.isArray(leadsData.data.leads)) {
+      // Structure: { success: true, data: { leads: [...], pagination: {...} } }
+      leads = leadsData.data.leads;
+    } else if (leadsData.data && Array.isArray(leadsData.data)) {
+      leads = leadsData.data;
+    } else if (leadsData.leads && Array.isArray(leadsData.leads)) {
+      leads = leadsData.leads;
+    } else {
+      console.error('Unexpected API response structure:', leadsData);
+      throw new Error('Invalid API response structure');
+    }
+
+    // Filter leads that have "A DETERMINAR" and an idp_id
+    const pendingLeads = leads.filter((lead: any) => 
+      lead.consumer_unit === 'A DETERMINAR' && 
+      lead.idp_id && 
+      lead.idp_id.trim() !== ''
+    );
+
+    console.log(`Found ${pendingLeads.length} leads with pending OCR processing out of ${leads.length} total leads`);
+    
+    let updatedCount = 0;
+
+    // Check each pending lead
+    for (const lead of pendingLeads) {
+      try {
+        const ocrResponse = await fetch(`https://d7eqdg7oj5.execute-api.us-east-2.amazonaws.com/dev/document/${lead.idp_id}`);
+        
+        if (!ocrResponse.ok) continue;
+        
+        const ocrStatus = await ocrResponse.json();
+        
+        if (ocrStatus && 
+            ocrStatus.status === 'COMPLETED' && 
+            ocrStatus.excel_s3_url) {
+          
+          console.log(`OCR completed for lead ${lead.id}, updating...`);
+          
+          // Update the lead with extracted data
+          const extractedData = ocrStatus.extracted_data;
+          
+          // Parse month and year from periodo_fatura
+          let month = 'A DETERMINAR';
+          let year = new Date().getFullYear();
+          
+          if (extractedData.periodo_fatura) {
+            const parts = extractedData.periodo_fatura.split('/');
+            if (parts.length === 2) {
+              const monthMap: Record<string, string> = {
+                'JAN': 'Janeiro', 'FEV': 'Fevereiro', 'MAR': 'Março',
+                'ABR': 'Abril', 'MAI': 'Maio', 'JUN': 'Junho',
+                'JUL': 'Julho', 'AGO': 'Agosto', 'SET': 'Setembro',
+                'OUT': 'Outubro', 'NOV': 'Novembro', 'DEZ': 'Dezembro',
+              };
+              month = monthMap[parts[0].toUpperCase()] || parts[0];
+              year = parseInt(parts[1], 10);
+            }
+          }
+
+          // Calculate total energy consumption
+          let energyValue = 1;
+          if (extractedData.historico_consumo && extractedData.historico_consumo.length > 0) {
+            const recentConsumption = extractedData.historico_consumo[0];
+            energyValue = (recentConsumption.consumo_ponta_kwh || 0) + (recentConsumption.consumo_fora_ponta_kwh || 0);
+          }
+
+          // Prepare update payload for lead
+          const updatePayload = {
+            consumer_unit: extractedData.codigo_instalacao || 'A DETERMINAR',
+            name: extractedData.nome_cliente || 'A DETERMINAR',
+            phone: '+55 (00) 00000-0000',
+            email: extractedData.email || 'contato@determinar.com.br',
+            cnpj: extractedData.documento_cliente || '00.000.000/0000-00',
+            month: month,
+            year: year,
+            energy_value: energyValue,
+            invoice_amount: extractedData.valor_fatura || 1,
+            status: 'qualifiedtobuy',
+            address: extractedData.address || '',
+            city: extractedData.city || '',
+            state: extractedData.state || '',
+            zip_code: extractedData.zip_code || '',
+          };
+
+          console.log('Updating lead with payload:', updatePayload);
+
+          // Make PUT request to update lead (without /external)
+          const updateResponse = await apiRequestWithAuth(`/leads/${lead.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatePayload),
+          });
+
+          if (updateResponse.ok) {
+            console.log('Lead updated successfully:', lead.id);
+            
+            // Now update the lead_invoice with extracted data
+            if (lead.lead_invoices && lead.lead_invoices.length > 0) {
+              const invoice = lead.lead_invoices[0]; // Get the first invoice
+              
+              // Generate normalized filename: {codigo_instalacao}_{periodo_fatura}.pdf
+              const normalizedFilename = `${extractedData.codigo_instalacao || 'unknown'}_${extractedData.periodo_fatura?.replace('/', '-') || 'unknown'}.pdf`;
+              
+              const invoiceUpdatePayload = {
+                idp_id: lead.idp_id,
+                invoice_amount: extractedData.valor_fatura?.toString() || invoice.invoice_amount,
+                simulation: true,  // Mark simulation as completed since OCR generated Excel
+                proposal: true,    // Mark proposal as available
+                filename_normalized: normalizedFilename,  // e.g., "701827947_AGO-2025.pdf"
+                extracted_data: {
+                  nome_cliente: extractedData.nome_cliente,
+                  codigo_instalacao: extractedData.codigo_instalacao,
+                  documento_cliente: extractedData.documento_cliente,
+                  periodo_fatura: extractedData.periodo_fatura,
+                  valor_fatura: extractedData.valor_fatura,
+                  distribuidora: extractedData.distribuidora,
+                  modalidade_tarifaria: extractedData.modalidade_tarifaria,
+                  subgrupo: extractedData.subgrupo,
+                  address: extractedData.address,
+                  city: extractedData.city,
+                  state: extractedData.state,
+                  zip_code: extractedData.zip_code,
+                  data_vencimento: extractedData.data_vencimento,
+                  demanda_contratada_fora_ponta: extractedData.demanda_contratada_fora_ponta,
+                  demanda_contratada_ponta: extractedData.demanda_contratada_ponta,
+                  historico_consumo: extractedData.historico_consumo,
+                  historico_demanda: extractedData.historico_demanda,
+                  tributos: extractedData.tributos,
+                  bandeira_tarifaria: extractedData.bandeira_tarifaria,
+                  excel_s3_url: ocrStatus.excel_s3_url,
+                }
+              };
+
+              console.log('Updating lead invoice:', invoice.id, 'with payload:', invoiceUpdatePayload);
+
+              try {
+                const invoiceUpdateResponse = await apiRequestWithAuth(`/leads/invoices/${invoice.id}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(invoiceUpdatePayload),
+                });
+
+                if (invoiceUpdateResponse.ok) {
+                  console.log('Lead invoice updated successfully:', invoice.id);
+                } else {
+                  console.error('Failed to update lead invoice:', invoice.id);
+                }
+              } catch (invoiceError) {
+                console.error('Error updating lead invoice:', invoiceError);
+                // Don't fail the whole operation if invoice update fails
+              }
+            }
+            
+            updatedCount++;
+          }
+        }
+      } catch (error) {
+        console.error(`Error processing OCR for lead ${lead.id}:`, error);
+      }
+    }
+    
+    return { success: true, updatedCount, totalPending: pendingLeads.length };
+  } catch (error) {
+    console.error('Error checking pending OCR jobs:', error);
+    return { success: false, error, updatedCount: 0, totalPending: 0 };
+  }
+};
+
 interface FormData {
-  consumer_unit: string;
-  client_name: string;
-  cnpj: string;
-  phone: string;
   email: string;
-  month: string;
-  year: string;
-  energy_value: string;
-  invoice_amount: string;
   observations: string;
   // Gerador questions
   hasGenerator: 'S' | 'N' | '';
@@ -36,20 +215,12 @@ interface FormData {
   contractEndDate: string;
 }
 
-export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: ModalUploadInvoiceProps) {
+export default function ModalUploadInvoice({ isOpen, onClose, onSuccess, onRefreshRequest }: ModalUploadInvoiceProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    consumer_unit: '',
-    client_name: '',
-    cnpj: '',
-    phone: '',
     email: '',
-    month: '',
-    year: new Date().getFullYear().toString(),
-    energy_value: '',
-    invoice_amount: '',
     observations: '',
     hasGenerator: '',
     generatorMonthlyCost: '',
@@ -67,25 +238,12 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
-    if (!formData.consumer_unit.trim()) {
-      newErrors.consumer_unit = 'Unidade consumidora é obrigatória';
-    }
-    if (!formData.client_name.trim()) {
-      newErrors.client_name = 'Nome do cliente é obrigatório';
-    }
-    if (!formData.cnpj.trim()) {
-      newErrors.cnpj = 'CNPJ é obrigatório';
-    } else if (!/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(formData.cnpj)) {
-      newErrors.cnpj = 'CNPJ deve estar no formato 00.000.000/0000-00';
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Telefone é obrigatório';
-    }
     if (!formData.email.trim()) {
       newErrors.email = 'E-mail é obrigatório';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'E-mail deve ter um formato válido';
     }
+    
     // Validate required Yes/No questions
     if (!formData.hasGenerator) {
       newErrors.hasGenerator = 'Esta pergunta é obrigatória';
@@ -98,23 +256,6 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
     }
     if (!formData.isInFreeMarket) {
       newErrors.isInFreeMarket = 'Esta pergunta é obrigatória';
-    }
-    
-    if (!formData.month.trim()) {
-      newErrors.month = 'Mês é obrigatório';
-    }
-    if (!formData.year.trim()) {
-      newErrors.year = 'Ano é obrigatório';
-    }
-    if (!formData.energy_value.trim()) {
-      newErrors.energy_value = 'Valor da energia é obrigatório';
-    } else if (isNaN(parseFloat(formData.energy_value)) || parseFloat(formData.energy_value) <= 0) {
-      newErrors.energy_value = 'Valor da energia deve ser um número positivo';
-    }
-    if (!formData.invoice_amount.trim()) {
-      newErrors.invoice_amount = 'Valor da fatura é obrigatório';
-    } else if (isNaN(parseFloat(formData.invoice_amount)) || parseFloat(formData.invoice_amount) <= 0) {
-      newErrors.invoice_amount = 'Valor da fatura deve ser um número positivo';
     }
 
     // Validate conditional fields
@@ -190,21 +331,200 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
     }
   };
 
-  const formatCNPJ = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    return numbers.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  // Function to check OCR status for a document
+  const checkOcrStatus = async (idpId: string) => {
+    try {
+      const response = await fetch(`https://d7eqdg7oj5.execute-api.us-east-2.amazonaws.com/dev/document/${idpId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to check OCR status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error checking OCR status:', error);
+      return null;
+    }
   };
 
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 2) {
-      return numbers;
-    } else if (numbers.length <= 4) {
-      return `+55 (${numbers.slice(2)})`;
-    } else if (numbers.length <= 9) {
-      return `+55 (${numbers.slice(2, 4)}) ${numbers.slice(4)}`;
-    } else {
-      return `+55 (${numbers.slice(2, 4)}) ${numbers.slice(4, 9)}-${numbers.slice(9, 13)}`;
+  // Helper function to convert month abbreviation to full name in Portuguese
+  const convertMonthToPortuguese = (monthAbbr: string): string => {
+    const monthMap: Record<string, string> = {
+      'JAN': 'Janeiro',
+      'FEV': 'Fevereiro',
+      'MAR': 'Março',
+      'ABR': 'Abril',
+      'MAI': 'Maio',
+      'JUN': 'Junho',
+      'JUL': 'Julho',
+      'AGO': 'Agosto',
+      'SET': 'Setembro',
+      'OUT': 'Outubro',
+      'NOV': 'Novembro',
+      'DEZ': 'Dezembro',
+    };
+    return monthMap[monthAbbr.toUpperCase()] || monthAbbr;
+  };
+
+  // Function to update lead with OCR extracted data
+  const updateLeadWithOcrData = async (leadId: string, ocrData: any) => {
+    try {
+      const extractedData = ocrData.extracted_data;
+      
+      // Parse month and year from periodo_fatura (e.g., "AGO/2025")
+      let month = 'A DETERMINAR';
+      let year = new Date().getFullYear();
+      
+      if (extractedData.periodo_fatura) {
+        const parts = extractedData.periodo_fatura.split('/');
+        if (parts.length === 2) {
+          month = convertMonthToPortuguese(parts[0]);
+          year = parseInt(parts[1], 10);
+        }
+      }
+
+      // Calculate total energy consumption from history (most recent month)
+      let energyValue = 1;
+      if (extractedData.historico_consumo && extractedData.historico_consumo.length > 0) {
+        const recentConsumption = extractedData.historico_consumo[0];
+        energyValue = (recentConsumption.consumo_ponta_kwh || 0) + (recentConsumption.consumo_fora_ponta_kwh || 0);
+      }
+
+      // Prepare update payload
+      const updatePayload = {
+        consumer_unit: extractedData.codigo_instalacao || 'A DETERMINAR',
+        name: extractedData.nome_cliente || 'A DETERMINAR',
+        phone: '+55 (00) 00000-0000', // Phone not available in OCR, keep placeholder
+        email: extractedData.email || 'contato@determinar.com.br', // Use existing or placeholder
+        cnpj: extractedData.documento_cliente || '00.000.000/0000-00',
+        month: month,
+        year: year,
+        energy_value: energyValue,
+        invoice_amount: extractedData.valor_fatura || 1,
+        status: 'qualifiedtobuy',
+        address: extractedData.address || '',
+        city: extractedData.city || '',
+        state: extractedData.state || '',
+        zip_code: extractedData.zip_code || '',
+      };
+
+      console.log('Updating lead with OCR data:', { leadId, updatePayload });
+
+      // Make PUT request to update lead
+      const response = await apiRequestWithAuth(`/leads/${leadId}/external`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatePayload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update lead: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Lead updated successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error updating lead with OCR data:', error);
+      throw error;
+    }
+  };
+
+  // Function to check and update leads with completed OCR processing
+  const checkPendingOcrJobs = async () => {
+    const result = await checkAndUpdatePendingOcrJobs();
+    
+    if (result.success && result.updatedCount > 0) {
+      toast.success(`${result.updatedCount} lead(s) atualizado(s) com dados do OCR!`);
+      // Trigger refresh callback if provided
+      onRefreshRequest?.();
+    } else if (result.success && result.totalPending > 0) {
+      console.log(`${result.totalPending} lead(s) ainda em processamento OCR`);
+    }
+  };
+
+  // Check for completed OCR jobs when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      checkPendingOcrJobs();
+    }
+  }, [isOpen]);
+
+  // Helper function to convert file to base64
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+        const base64Data = base64String.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Function to send file to IDP API for processing
+  const sendToIdpApi = async (file: File, documentId: string) => {
+    try {
+      // Convert file to base64
+      const base64File = await convertFileToBase64(file);
+
+      // Prepare request payload - matching the working curl example format
+      const payload = {
+        base64_file: `data:${file.type};base64,${base64File}`,
+        filename: file.name,
+        document_id: documentId,
+      };
+
+      console.log('IDP Payload:', {
+        filename: payload.filename,
+        document_id: payload.document_id,
+        base64_length: base64File.length,
+        file_type: file.type
+      });
+
+      // Make API call to IDP
+      const response = await fetch('https://api.ynovamarketplace.com/api/idp/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        // Try to get error details from response body
+        let errorMessage = `Erro no IDP: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          console.error('IDP API Error Response:', errorData);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          // If response is not JSON, try to get text
+          const errorText = await response.text();
+          console.error('IDP API Error Text:', errorText);
+          if (errorText) errorMessage = errorText;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Erro no processamento do documento');
+      }
+
+      console.log('IDP processing started successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('IDP processing error:', error);
+      // Don't throw - we don't want to fail the entire upload if IDP fails
+      toast.error('Aviso: O processamento OCR pode ter falhado, mas a fatura foi salva.');
     }
   };
 
@@ -226,15 +546,17 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('file', selectedFile);
-      formDataToSend.append('consumer_unit', formData.consumer_unit);
-      formDataToSend.append('name', formData.client_name); // Map client_name to name
-      formDataToSend.append('cnpj', formData.cnpj);
-      formDataToSend.append('phone', formData.phone);
+      
+      // Send placeholder values for fields that will be populated by OCR
+      formDataToSend.append('consumer_unit', 'A DETERMINAR');
+      formDataToSend.append('name', 'A DETERMINAR'); // Client name placeholder
+      formDataToSend.append('cnpj', '00.000.000/0000-00'); // Valid CNPJ format placeholder
+      formDataToSend.append('phone', '+55 (00) 00000-0000'); // Valid phone format placeholder
       formDataToSend.append('email', formData.email);
-      formDataToSend.append('month', formData.month);
-      formDataToSend.append('year', formData.year);
-      formDataToSend.append('energy_value', formData.energy_value);
-      formDataToSend.append('invoice_amount', formData.invoice_amount);
+      formDataToSend.append('month', 'A DETERMINAR');
+      formDataToSend.append('year', new Date().getFullYear().toString());
+      formDataToSend.append('energy_value', '1');
+      formDataToSend.append('invoice_amount', '1');
       
       // Add conditional fields to observations or as separate fields
       let observationsText = formData.observations;
@@ -295,7 +617,40 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
       }
 
       const result = await response.json();
-      toast.success('Fatura enviada com sucesso!');
+      
+      // Generate a UUID for the document_id (IDP processing)
+      const documentId = crypto.randomUUID();
+      
+      console.log('Lead created:', result.data);
+      console.log('Generated Document UUID for IDP:', documentId);
+      
+      // Update the lead with the idp_id for OCR processing using PUT
+      try {
+        const updateResponse = await apiRequestWithAuth(`/leads/${result.data.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            idp_id: documentId
+          }),
+        });
+        
+        console.log('Lead updated with idp_id:', documentId);
+        
+        // Send the file to IDP API for OCR processing
+        console.log('Sending file to IDP API...');
+        const idpResult = await sendToIdpApi(selectedFile, documentId);
+        console.log('IDP API response:', idpResult);
+        
+        toast.success('Fatura enviada com sucesso! O processamento OCR foi iniciado.');
+      } catch (updateError) {
+        console.error('Error updating lead with idp_id or calling IDP:', updateError);
+        // Still show success for the upload, but warn about OCR
+        toast.success('Fatura enviada com sucesso!');
+        toast.error('Aviso: Falha ao iniciar o processamento OCR.');
+      }
+      
       onSuccess?.(result.data);
       handleClose();
     } catch (error) {
@@ -309,15 +664,7 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
   const handleClose = () => {
     setSelectedFile(null);
     setFormData({
-      consumer_unit: '',
-      client_name: '',
-      cnpj: '',
-      phone: '',
       email: '',
-      month: '',
-      year: new Date().getFullYear().toString(),
-      energy_value: '',
-      invoice_amount: '',
       observations: '',
       hasGenerator: '',
       generatorMonthlyCost: '',
@@ -416,214 +763,25 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess }: Modal
             </div>
 
             {/* Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Unidade Consumidora *
-                </label>
-                <input
-                  type="text"
-                  value={formData.consumer_unit}
-                  onChange={(e) => handleInputChange('consumer_unit', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.consumer_unit ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                  placeholder="Ex: 123456789"
-                />
-                {errors.consumer_unit && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.consumer_unit}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome do Cliente *
-                </label>
-                <input
-                  type="text"
-                  value={formData.client_name}
-                  onChange={(e) => handleInputChange('client_name', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.client_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                  placeholder="Ex: Empresa ABC Ltda"
-                />
-                {errors.client_name && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.client_name}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  CNPJ *
-                </label>
-                <input
-                  type="text"
-                  value={formData.cnpj}
-                  onChange={(e) => handleInputChange('cnpj', formatCNPJ(e.target.value))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.cnpj ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                  placeholder="00.000.000/0000-00"
-                  maxLength={18}
-                />
-                {errors.cnpj && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.cnpj}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Telefone *
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', formatPhone(e.target.value))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                  placeholder="+55 (11) 99999-9999"
-                />
-                {errors.phone && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.phone}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  E-mail *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                  placeholder="cliente@empresa.com"
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.email}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Mês *
-                </label>
-                <select
-                  value={formData.month}
-                  onChange={(e) => handleInputChange('month', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.month ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                >
-                  <option value="">Selecione o mês</option>
-                  <option value="Janeiro">Janeiro</option>
-                  <option value="Fevereiro">Fevereiro</option>
-                  <option value="Março">Março</option>
-                  <option value="Abril">Abril</option>
-                  <option value="Maio">Maio</option>
-                  <option value="Junho">Junho</option>
-                  <option value="Julho">Julho</option>
-                  <option value="Agosto">Agosto</option>
-                  <option value="Setembro">Setembro</option>
-                  <option value="Outubro">Outubro</option>
-                  <option value="Novembro">Novembro</option>
-                  <option value="Dezembro">Dezembro</option>
-                </select>
-                {errors.month && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.month}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Ano *
-                </label>
-                <input
-                  type="number"
-                  value={formData.year}
-                  onChange={(e) => handleInputChange('year', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.year ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                  placeholder="2025"
-                  min="2020"
-                  max="2030"
-                />
-                {errors.year && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.year}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Valor da Energia (kWh) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.energy_value}
-                  onChange={(e) => handleInputChange('energy_value', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.energy_value ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                  placeholder="0.00"
-                  min="0"
-                />
-                {errors.energy_value && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.energy_value}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Valor da Fatura (R$) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.invoice_amount}
-                  onChange={(e) => handleInputChange('invoice_amount', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
-                    errors.invoice_amount ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
-                  }`}
-                  placeholder="0.00"
-                  min="0"
-                />
-                {errors.invoice_amount && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center">
-                    <AlertCircle size={12} className="mr-1" />
-                    {errors.invoice_amount}
-                  </p>
-                )}
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                E-mail *
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#FE5200] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900 ${
+                  errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-300'
+                }`}
+                placeholder="cliente@empresa.com"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1 flex items-center">
+                  <AlertCircle size={12} className="mr-1" />
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             {/* Conditional Questions Section */}

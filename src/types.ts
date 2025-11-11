@@ -22,6 +22,7 @@ export type Lead = {
   state?: string;
   zip_code?: string;
   source?: string;
+  contract_signed?: boolean;
   consultant?: {
     id: string;
     name: string;
@@ -32,6 +33,41 @@ export type Lead = {
   lead_documents?: LeadDocument[];
 };
 
+export type InvoiceExtractedData = {
+  nome_cliente?: string;
+  codigo_instalacao?: string;
+  documento_cliente?: string;
+  periodo_fatura?: string;
+  valor_fatura?: number;
+  distribuidora?: string;
+  modalidade_tarifaria?: string;
+  subgrupo?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  data_vencimento?: string;
+  demanda_contratada_fora_ponta?: number;
+  demanda_contratada_ponta?: number | null;
+  historico_consumo?: Array<{
+    consumo_fora_ponta_kwh?: number;
+    mes?: string;
+    consumo_ponta_kwh?: number;
+  }>;
+  historico_demanda?: Array<{
+    demanda_ponta_kw?: number;
+    demanda_fora_ponta_kw?: number;
+    mes?: string;
+  }>;
+  tributos?: {
+    icms?: { valor?: number; aliquota?: number };
+    pis?: { valor?: number; aliquota?: number };
+    cofins?: { valor?: number; aliquota?: number };
+  };
+  bandeira_tarifaria?: string | null;
+  excel_s3_url?: string;
+};
+
 export type LeadInvoice = {
   id: string;
   lead_id: string;
@@ -40,7 +76,9 @@ export type LeadInvoice = {
   storage_url: string;
   signed_url?: string;
   invoice_amount: string;
-  extracted_data: any;
+  extracted_data?: InvoiceExtractedData;
+  simulation?: boolean;
+  proposal?: boolean;
   created_at: string;
   updated_at: string;
   deleted_at?: string;

@@ -4,23 +4,40 @@ import {
   Building2,
   Calendar,
   ChevronDown,
+  DollarSign,
   ExternalLink,
+  FileSignature,
   FileText,
+  FileSpreadsheet,
   Loader2,
   Mail,
   Phone,
   Plus,
+  Presentation,
   RefreshCcw,
   User,
   X,
   Search,
+  Upload,
   type LucideIcon,
 } from 'lucide-react'
 import type { Lead, LeadInvoice, LeadDocument } from '../../types'
-import { getLeads, getLeadInvoices, getLeadDocuments, getLeadDocumentSignedUrl } from '../../utils/api'
-import ModalUploadInvoice from '../../components/ModalUploadInvoice'
+import { 
+  getLeads, 
+  getLeadInvoices, 
+  getLeadDocuments, 
+  getLeadDocumentSignedUrl,
+  updateLead,
+  downloadFileAsBase64,
+  extractPptDataFromExcel,
+  generatePptPresentation,
+  uploadLeadDocument
+} from '../../utils/api'
+import { useUser } from '../../contexts/UserContext'
+import ModalUploadInvoice, { checkAndUpdatePendingOcrJobs } from '../../components/ModalUploadInvoice'
 import ModalUploadInvoiceToLead from '../../components/ModalUploadInvoiceToLead'
-import ModalUploadDocumentToLead from '../../components/ModalUploadDocumentToLead'
+import ContractSignatureModal from '../../components/ContractSignatureModal'
+import { toast } from 'sonner'
 
 const stageColors = [
   'from-sky-500 to-sky-400',
@@ -496,6 +513,7 @@ const normalizeLead = (rawLead: any): Lead => {
     state: rawLead?.state ?? '',
     zip_code: rawLead?.zip_code ?? '',
     source: rawLead?.source ?? rawLead?.origem ?? '',
+    contract_signed: rawLead?.contract_signed ?? false,
     consultant,
     lead_invoices: Array.isArray(rawLead?.lead_invoices) ? rawLead.lead_invoices : [],
     lead_documents: Array.isArray(rawLead?.lead_documents) ? rawLead.lead_documents : [],
@@ -611,13 +629,12 @@ export default function PipelineStatus() {
   const [selectedLeadForInvoices, setSelectedLeadForInvoices] = useState<Lead | null>(null)
   const [isUploadInvoiceToLeadModalOpen, setIsUploadInvoiceToLeadModalOpen] = useState(false)
   const [selectedLeadForUpload, setSelectedLeadForUpload] = useState<Lead | null>(null)
-  const [isLeadDocumentModalOpen, setIsLeadDocumentModalOpen] = useState(false)
-  const [selectedLeadDocuments, setSelectedLeadDocuments] = useState<LeadDocument[]>([])
-  const [selectedLeadForDocuments, setSelectedLeadForDocuments] = useState<Lead | null>(null)
-  const [isUploadDocumentToLeadModalOpen, setIsUploadDocumentToLeadModalOpen] = useState(false)
-  const [selectedLeadForDocumentUpload, setSelectedLeadForDocumentUpload] = useState<Lead | null>(null)
   const [leadDetailsRefreshTrigger, setLeadDetailsRefreshTrigger] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
+  const [isRefreshingOcr, setIsRefreshingOcr] = useState(false)
+  const [generatingProposalIds, setGeneratingProposalIds] = useState<Set<string>>(new Set())
+  const [isContractSignatureModalOpen, setIsContractSignatureModalOpen] = useState(false)
+  const [leadForContractSignature, setLeadForContractSignature] = useState<Lead | null>(null)
 
   const loadPipeline = useCallback(async (options?: { silent?: boolean }) => {
     const isSilent = options?.silent ?? false
@@ -757,6 +774,30 @@ const filteredStageLeads = useMemo(() => {
   const openInvoiceModal = () => setIsInvoiceModalOpen(true)
   const closeInvoiceModal = () => setIsInvoiceModalOpen(false)
 
+  const handleRefreshOcr = async () => {
+    setIsRefreshingOcr(true)
+    try {
+      const result = await checkAndUpdatePendingOcrJobs()
+      
+      if (result.success && result.updatedCount > 0) {
+        toast.success(`${result.updatedCount} lead(s) atualizado(s) com dados do OCR!`)
+        // Refresh the pipeline to show updated data
+        loadPipeline({ silent: true })
+      } else if (result.success && result.totalPending > 0 && result.updatedCount === 0) {
+        toast.info(`${result.totalPending} lead(s) ainda em processamento OCR`)
+      } else if (result.success) {
+        toast.info('Nenhum lead pendente de processamento OCR')
+      } else {
+        toast.error('Erro ao verificar status do OCR')
+      }
+    } catch (error) {
+      console.error('Error refreshing OCR:', error)
+      toast.error('Erro ao atualizar leads com OCR')
+    } finally {
+      setIsRefreshingOcr(false)
+    }
+  }
+
   const handleOpenLeadInvoices = async (lead: Lead) => {
     try {
       setSelectedLeadForInvoices(lead)
@@ -809,62 +850,105 @@ const filteredStageLeads = useMemo(() => {
     }
   }
 
-  const handleOpenLeadDocuments = async (lead: Lead) => {
+  const handleGenerateSimulation = async (invoice: LeadInvoice) => {
     try {
-      setSelectedLeadForDocuments(lead)
       setError(null)
       
-      // Load documents for this lead
-      const response = await getLeadDocuments(lead.id)
-      if (response.success) {
-        // Fetch signed URLs for each document
-        const documentsWithSignedUrls = await Promise.all(
-          response.data.map(async (doc: LeadDocument) => {
-            if (!doc.signed_url) {
-              try {
-                const signedUrlResponse = await getLeadDocumentSignedUrl(doc.id)
-                if (signedUrlResponse.success && signedUrlResponse.data?.signed_url) {
-                  return { ...doc, signed_url: signedUrlResponse.data.signed_url }
-                }
-              } catch (err) {
-                console.error(`Error fetching signed URL for document ${doc.id}:`, err)
-              }
-            }
-            return doc
-          })
-        )
-        setSelectedLeadDocuments(documentsWithSignedUrls)
-        setIsLeadDocumentModalOpen(true)
-      } else {
-        setError('Falha ao carregar documentos')
+      // If simulation already exists, download the Excel file
+      if (invoice.simulation && invoice.extracted_data?.excel_s3_url) {
+        const excelUrl = invoice.extracted_data.excel_s3_url
+        window.open(excelUrl, '_blank')
+        return
       }
+      
+      // TODO: Implement API call to generate simulation
+      console.log('Generate simulation for invoice:', invoice.id)
+      // After successful generation, refresh the invoices
+      // const response = await generateInvoiceSimulation(invoice.id)
+      // if (response.success) {
+      //   loadPipeline({ silent: true })
+      //   setLeadDetailsRefreshTrigger(prev => prev + 1)
+      // }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao carregar documentos')
+      setError(err instanceof Error ? err.message : 'Falha ao gerar simulação')
     }
   }
 
-  const handleCloseLeadDocumentModal = () => {
-    setIsLeadDocumentModalOpen(false)
-    setSelectedLeadDocuments([])
-    setSelectedLeadForDocuments(null)
-  }
-
-  const handleOpenUploadDocumentToLead = (lead: Lead) => {
-    setSelectedLeadForDocumentUpload(lead)
-    setIsUploadDocumentToLeadModalOpen(true)
-  }
-
-  const handleCloseUploadDocumentToLead = () => {
-    setIsUploadDocumentToLeadModalOpen(false)
-    setSelectedLeadForDocumentUpload(null)
-  }
-
-  const handleUploadDocumentToLeadSuccess = () => {
-    // Auto-refresh the pipeline after successful document upload
-    loadPipeline({ silent: true })
+  const handleGenerateProposal = async (invoice: LeadInvoice) => {
+    // Mark this invoice as generating
+    setGeneratingProposalIds(prev => new Set(prev).add(invoice.id))
     
-    // Trigger refresh of lead details modal if it's open
-    setLeadDetailsRefreshTrigger(prev => prev + 1)
+    try {
+      setError(null)
+      
+      // Check if Excel URL exists
+      if (!invoice.extracted_data?.excel_s3_url) {
+        toast.error('URL do arquivo Excel não encontrada')
+        return
+      }
+
+      // Get the lead to check its current stage
+      const lead = leads.find(l => l.id === invoice.lead_id)
+      const isQualificadoStage = lead ? getStageNameForStatus(lead.status) === 'Qualificado' : false
+
+      toast.info('Baixando arquivo Excel...')
+      
+      // Step 1: Download Excel file and convert to base64
+      const excelBase64 = await downloadFileAsBase64(invoice.extracted_data.excel_s3_url)
+      
+      toast.info('Extraindo dados da planilha...')
+      
+      // Step 2: Extract PPT data from Excel
+      const pptData = await extractPptDataFromExcel(excelBase64)
+      
+      if (pptData.warnings && pptData.warnings.length > 0) {
+        console.warn('PPT Extraction Warnings:', pptData.warnings)
+      }
+      
+      toast.info('Gerando apresentação...')
+      
+      // Step 3: Generate PPT presentation via N8N
+      const pptResponse = await generatePptPresentation(pptData)
+      
+      if (!pptResponse.linkPpt) {
+        throw new Error('Link da apresentação não foi retornado')
+      }
+      
+      // Step 4: Open the presentation in a new tab
+      window.open(pptResponse.linkPpt, '_blank')
+      
+      toast.success('Apresentação gerada com sucesso!')
+      
+      // Step 5: If lead is in "Qualificado" stage, move it to "Apresentação"
+      if (isQualificadoStage && lead) {
+        toast.info('Movendo lead para etapa de Apresentação...')
+        
+        try {
+          await updateLead(lead.id, { status: 'apresentacao' })
+          
+          // Refresh the pipeline to show updated stage
+          loadPipeline({ silent: true })
+          setLeadDetailsRefreshTrigger(prev => prev + 1)
+          
+          toast.success('Lead movido para Apresentação!')
+        } catch (updateErr) {
+          console.error('Error updating lead status:', updateErr)
+          toast.warning('Apresentação gerada, mas não foi possível atualizar o status do lead')
+        }
+      }
+    } catch (err) {
+      console.error('Error generating proposal:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Falha ao gerar proposta'
+      setError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      // Remove this invoice from generating set
+      setGeneratingProposalIds(prev => {
+        const next = new Set(prev)
+        next.delete(invoice.id)
+        return next
+      })
+    }
   }
 
   const handleOpenDocumentFile = (document: LeadDocument) => {
@@ -1010,7 +1094,6 @@ const filteredStageLeads = useMemo(() => {
                       leads={leadsInStage}
                       onLeadClick={lead => handleLeadClick(stage, lead)}
                       onOpenInvoices={handleOpenLeadInvoices}
-                      onOpenDocuments={handleOpenLeadDocuments}
                     />
                   )}
                 </div>
@@ -1058,27 +1141,50 @@ const filteredStageLeads = useMemo(() => {
           onClose={closeLeadDetails}
           onOpenFile={handleOpenFile}
           onUploadInvoice={handleOpenUploadInvoiceToLead}
-          onOpenDocuments={handleOpenLeadDocuments}
-          onUploadDocument={handleOpenUploadDocumentToLead}
           onOpenDocumentFile={handleOpenDocumentFile}
+          onGenerateSimulation={handleGenerateSimulation}
+          onGenerateProposal={handleGenerateProposal}
+          onRefreshPipeline={() => {
+            loadPipeline({ silent: true })
+            setLeadDetailsRefreshTrigger(prev => prev + 1)
+          }}
           refreshTrigger={leadDetailsRefreshTrigger}
+          generatingProposalIds={generatingProposalIds}
+          onOpenContractSignatureModal={(lead: Lead) => {
+            setLeadForContractSignature(lead)
+            setIsContractSignatureModalOpen(true)
+          }}
         />
       )}
 
-      {/* Floating Action Button for Invoice Upload */}
-      <button
-        onClick={openInvoiceModal}
-        className="fixed right-6 bottom-6 z-40 rounded-full bg-[#FE5200] p-4 text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-[#FE5200]/90"
-        title="Enviar Fatura"
-      >
-        <Plus size={24} />
-      </button>
+      {/* Floating Action Buttons */}
+      <div className="fixed right-6 bottom-6 z-40 flex flex-col gap-3">
+        {/* OCR Refresh Button */}
+        <button
+          onClick={handleRefreshOcr}
+          disabled={isRefreshingOcr}
+          className="rounded-full bg-blue-600 p-4 text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          title="Atualizar dados do OCR"
+        >
+          <RefreshCcw size={24} className={isRefreshingOcr ? 'animate-spin' : ''} />
+        </button>
+        
+        {/* Invoice Upload Button */}
+        <button
+          onClick={openInvoiceModal}
+          className="rounded-full bg-[#FE5200] p-4 text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-[#FE5200]/90"
+          title="Enviar Fatura"
+        >
+          <Plus size={24} />
+        </button>
+      </div>
 
       {/* Invoice Upload Modal */}
       <ModalUploadInvoice
         isOpen={isInvoiceModalOpen}
         onClose={closeInvoiceModal}
         onSuccess={handleInvoiceUploadSuccess}
+        onRefreshRequest={() => loadPipeline({ silent: true })}
       />
 
       {/* Lead Invoices Modal */}
@@ -1114,10 +1220,10 @@ const filteredStageLeads = useMemo(() => {
                     key={invoice.id}
                     className="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
                   >
-                    <div className="flex items-center gap-3">
-                      <FileText className={`h-8 w-8 ${invoice.signed_url ? 'text-blue-600' : 'text-gray-400'}`} />
-                      <div>
-                        <p className="font-medium text-gray-900">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className={`h-8 w-8 flex-shrink-0 ${invoice.signed_url ? 'text-blue-600' : 'text-gray-400'}`} />
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">
                           {invoice.filename_normalized}
                         </p>
                         <p className="text-sm text-gray-600">
@@ -1129,18 +1235,60 @@ const filteredStageLeads = useMemo(() => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleGenerateSimulation(invoice)}
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                          invoice.simulation
+                            ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100'
+                            : 'border-emerald-500 text-emerald-700 hover:bg-emerald-50'
+                        }`}
+                        title={invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}
+                      >
+                        <FileSpreadsheet size={16} />
+                        <span className="hidden sm:inline">{invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleGenerateProposal(invoice)}
+                        disabled={!invoice.simulation || generatingProposalIds.has(invoice.id)}
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                          !invoice.simulation || generatingProposalIds.has(invoice.id)
+                            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                            : invoice.proposal
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                            : 'border-purple-500 text-purple-700 hover:bg-purple-50'
+                        }`}
+                        title={
+                          generatingProposalIds.has(invoice.id)
+                            ? 'Gerando proposta...'
+                            : !invoice.simulation
+                            ? 'Gere a simulação primeiro'
+                            : invoice.proposal
+                            ? 'Proposta gerada'
+                            : 'Gerar proposta'
+                        }
+                      >
+                        {generatingProposalIds.has(invoice.id) ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Presentation size={16} />
+                        )}
+                        <span className="hidden sm:inline">
+                          {generatingProposalIds.has(invoice.id) ? 'Gerando...' : 'Gerar proposta'}
+                        </span>
+                      </button>
                       <button
                         onClick={() => handleOpenFile(invoice)}
                         disabled={!invoice.signed_url}
-                        className={`flex items-center gap-2 rounded-lg border px-4 py-2 transition-colors ${
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
                           invoice.signed_url 
                             ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
                             : 'border-gray-200 text-gray-400 cursor-not-allowed'
                         }`}
+                        title={invoice.signed_url ? 'Abrir fatura' : 'Arquivo não disponível'}
                       >
                         <ExternalLink size={16} />
-                        Abrir
+                        <span className="hidden sm:inline">Abrir</span>
                       </button>
                     </div>
                   </div>
@@ -1162,86 +1310,23 @@ const filteredStageLeads = useMemo(() => {
         />
       )}
 
-      {/* Lead Documents Modal */}
-      {isLeadDocumentModalOpen && selectedLeadForDocuments && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Documentos - {selectedLeadForDocuments.name}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  {selectedLeadForDocuments.consumer_unit} • {selectedLeadForDocuments.cnpj}
-                </p>
-              </div>
-              <button
-                onClick={handleCloseLeadDocumentModal}
-                className="text-gray-500 transition-colors hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {selectedLeadDocuments.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Nenhum documento encontrado para este lead.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {selectedLeadDocuments.map((document) => (
-                  <div
-                    key={document.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className={`h-8 w-8 ${document.signed_url ? 'text-green-600' : 'text-gray-400'}`} />
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {document.filename_normalized || document.filename_original}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 mr-2">
-                            {document.document_type}
-                          </span>
-                          {new Date(document.created_at).toLocaleDateString("pt-BR")}
-                          {!document.signed_url && (
-                            <span className="ml-2 text-red-500 text-xs">(Arquivo não disponível)</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleOpenDocumentFile(document)}
-                        disabled={!document.signed_url}
-                        className={`flex items-center gap-2 rounded-lg border px-4 py-2 transition-colors ${
-                          document.signed_url 
-                            ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
-                            : 'border-gray-200 text-gray-400 cursor-not-allowed'
-                        }`}
-                      >
-                        <ExternalLink size={16} />
-                        Abrir
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Upload Document to Lead Modal */}
-      {isUploadDocumentToLeadModalOpen && selectedLeadForDocumentUpload && (
-        <ModalUploadDocumentToLead
-          isOpen={isUploadDocumentToLeadModalOpen}
-          onClose={handleCloseUploadDocumentToLead}
-          onSuccess={handleUploadDocumentToLeadSuccess}
-          leadId={selectedLeadForDocumentUpload.id}
-          leadName={selectedLeadForDocumentUpload.name}
+      {/* Contract Signature Modal */}
+      {isContractSignatureModalOpen && leadForContractSignature && (
+        <ContractSignatureModal
+          isOpen={isContractSignatureModalOpen}
+          onClose={() => {
+            setIsContractSignatureModalOpen(false)
+            setLeadForContractSignature(null)
+          }}
+          lead={leadForContractSignature}
+          extractedData={
+            leadForContractSignature.lead_invoices?.[0]?.extracted_data
+          }
+          onSuccess={() => {
+            loadPipeline({ silent: true })
+            setIsContractSignatureModalOpen(false)
+            setLeadForContractSignature(null)
+          }}
         />
       )}
     </div>
@@ -1270,12 +1355,10 @@ function StageLeadList({
   leads,
   onLeadClick,
   onOpenInvoices,
-  onOpenDocuments,
 }: {
   leads: Lead[]
   onLeadClick: (lead: Lead) => void
   onOpenInvoices: (lead: Lead) => void
-  onOpenDocuments: (lead: Lead) => void
 }) {
   if (!leads.length) {
     return (
@@ -1340,37 +1423,22 @@ function StageLeadList({
                 ))}
           </div>
           
-          {/* Invoice and Document section */}
-          {(lead.lead_invoices && lead.lead_invoices.length > 0) || (lead.lead_documents && lead.lead_documents.length > 0) ? (
+          {/* Invoice section */}
+          {lead.lead_invoices && lead.lead_invoices.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
-              {lead.lead_invoices && lead.lead_invoices.length > 0 && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onOpenInvoices(lead)
-                  }}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
-                >
-                  <FileText size={16} />
-                  <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
-                </button>
-              )}
-              {lead.lead_documents && lead.lead_documents.length > 0 && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onOpenDocuments(lead)
-                  }}
-                  className="flex items-center gap-2 text-green-600 hover:text-green-800 transition-colors text-sm font-medium"
-                >
-                  <FileText size={16} />
-                  <span>{lead.lead_documents.length} documento{lead.lead_documents.length > 1 ? 's' : ''}</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpenInvoices(lead)
+                }}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
+              >
+                <FileText size={16} />
+                <span>{lead.lead_invoices.length} fatura{lead.lead_invoices.length > 1 ? 's' : ''}</span>
+              </button>
             </div>
-          ) : null}
+          )}
           
         </div>
       ))}
@@ -1384,27 +1452,45 @@ function LeadDetailsModal({
   onClose,
   onOpenFile,
   onUploadInvoice,
-  onOpenDocuments,
-  onUploadDocument,
   onOpenDocumentFile,
+  onGenerateSimulation,
+  onGenerateProposal,
+  onRefreshPipeline,
   refreshTrigger,
+  generatingProposalIds,
+  onOpenContractSignatureModal,
 }: {
   lead: Lead
   stage: PipelineStage
   onClose: () => void
   onOpenFile: (invoice: LeadInvoice) => void
   onUploadInvoice: (lead: Lead) => void
-  onOpenDocuments: (lead: Lead) => Promise<void>
-  onUploadDocument: (lead: Lead) => void
   onOpenDocumentFile: (document: LeadDocument) => void
+  onGenerateSimulation: (invoice: LeadInvoice) => Promise<void>
+  onGenerateProposal: (invoice: LeadInvoice) => Promise<void>
+  onRefreshPipeline: () => void
   refreshTrigger?: number
+  generatingProposalIds: Set<string>
+  onOpenContractSignatureModal: (lead: Lead) => void
 }) {
+  const { isAdmin } = useUser()
   const [invoices, setInvoices] = useState<LeadInvoice[]>([])
   const [loadingInvoices, setLoadingInvoices] = useState(false)
   const [documents, setDocuments] = useState<LeadDocument[]>([])
   const [loadingDocuments, setLoadingDocuments] = useState(false)
+  const [contratoSocialFile, setContratoSocialFile] = useState<File | null>(null)
+  const [documentoPessoalFile, setDocumentoPessoalFile] = useState<File | null>(null)
+  const [uploadingContratoSocial, setUploadingContratoSocial] = useState(false)
+  const [uploadingDocumentoPessoal, setUploadingDocumentoPessoal] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   
   const statusInfo = getStatusDisplay(lead.status)
+  const currentStageName = getStageNameForStatus(lead.status)
+  const isFechamentoStage = currentStageName === 'Fechamento'
+  const isApresentacaoStage = currentStageName === 'Apresentação'
+  const isNegociacaoStage = currentStageName === 'Negociação'
+  const canMoveToNextStage = isApresentacaoStage || isNegociacaoStage
+  
   const sources = lead.source
     ?.split(',')
     .map(source => source.trim())
@@ -1475,6 +1561,120 @@ function LeadDetailsModal({
     loadDocuments()
   }, [lead.id, lead.lead_documents, refreshTrigger])
 
+  const handleContratoSocialFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Tipo de arquivo não suportado. Use PDF, JPG, PNG ou WEBP.')
+        return
+      }
+      // Validate file size (10MB max)
+      const maxSize = 10 * 1024 * 1024
+      if (file.size > maxSize) {
+        toast.error('Arquivo muito grande. Tamanho máximo: 10MB')
+        return
+      }
+      setContratoSocialFile(file)
+    }
+  }
+
+  const handleDocumentoPessoalFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Tipo de arquivo não suportado. Use PDF, JPG, PNG ou WEBP.')
+        return
+      }
+      // Validate file size (10MB max)
+      const maxSize = 10 * 1024 * 1024
+      if (file.size > maxSize) {
+        toast.error('Arquivo muito grande. Tamanho máximo: 10MB')
+        return
+      }
+      setDocumentoPessoalFile(file)
+    }
+  }
+
+  const handleUploadContratoSocial = async () => {
+    if (!contratoSocialFile) {
+      toast.error('Por favor, selecione um arquivo')
+      return
+    }
+
+    setUploadingContratoSocial(true)
+    try {
+      await uploadLeadDocument(lead.id, contratoSocialFile, 'Contrato Social')
+      toast.success('Contrato Social enviado com sucesso!')
+      setContratoSocialFile(null)
+      // Refresh documents list
+      onRefreshPipeline()
+    } catch (error) {
+      console.error('Error uploading Contrato Social:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar documento')
+    } finally {
+      setUploadingContratoSocial(false)
+    }
+  }
+
+  const handleUploadDocumentoPessoal = async () => {
+    if (!documentoPessoalFile) {
+      toast.error('Por favor, selecione um arquivo')
+      return
+    }
+
+    setUploadingDocumentoPessoal(true)
+    try {
+      await uploadLeadDocument(lead.id, documentoPessoalFile, 'Documento pessoal')
+      toast.success('Documento Pessoal enviado com sucesso!')
+      setDocumentoPessoalFile(null)
+      // Refresh documents list
+      onRefreshPipeline()
+    } catch (error) {
+      console.error('Error uploading Documento Pessoal:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar documento')
+    } finally {
+      setUploadingDocumentoPessoal(false)
+    }
+  }
+
+  const handleSendContractForSignature = () => {
+    onOpenContractSignatureModal(lead)
+  }
+
+  const handleCommissionClosure = () => {
+    // TODO: Implement commission closure functionality
+    console.log('Commission closure:', lead.id)
+  }
+
+  const handleMoveToStage = async (newStatus: string) => {
+    if (!newStatus || newStatus === lead.status) {
+      return
+    }
+
+    setIsUpdatingStatus(true)
+    try {
+      await updateLead(lead.id, { status: newStatus })
+      
+      const newStageName = getStageNameForStatus(newStatus)
+      toast.success(`Lead movido para ${newStageName} com sucesso!`)
+      
+      // Refresh the pipeline to show updated stage
+      onRefreshPipeline()
+      
+      // Close the modal as the lead has moved
+      onClose()
+    } catch (error) {
+      console.error('Error updating lead status:', error)
+      toast.error(error instanceof Error ? error.message : 'Erro ao mover lead')
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
       <div className="w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden rounded-xl sm:rounded-2xl bg-white shadow-2xl">
@@ -1514,6 +1714,49 @@ function LeadDetailsModal({
             ))}
           </div>
 
+          {/* Move to Stage Dropdown - Only for Apresentação or Negociação stages */}
+          {canMoveToNextStage && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <label htmlFor="move-stage" className="mb-2 block text-sm font-semibold text-blue-900">
+                Mover lead para próxima etapa
+              </label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <select
+                  id="move-stage"
+                  disabled={isUpdatingStatus}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleMoveToStage(e.target.value)
+                    }
+                  }}
+                  defaultValue=""
+                  className="flex-1 rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#ff6b35] focus:outline-none focus:ring-2 focus:ring-[#ff6b35]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled>
+                    Selecione a próxima etapa
+                  </option>
+                  {isApresentacaoStage && (
+                    <option value="decisionmakerboughtin">Negociação</option>
+                  )}
+                  {(isApresentacaoStage || isNegociacaoStage) && (
+                    <option value="presentationscheduled">Fechamento</option>
+                  )}
+                </select>
+                {isUpdatingStatus && (
+                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Atualizando...</span>
+                  </div>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-blue-700">
+                {isApresentacaoStage 
+                  ? 'Avance o lead para Negociação ou Fechamento'
+                  : 'Avance o lead para Fechamento'}
+              </p>
+            </div>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <InfoRow icon={Building2} label="CNPJ" value={lead.cnpj} />
             <InfoRow icon={Mail} label="E-mail" value={lead.email} href={lead.email ? `mailto:${lead.email}` : undefined} />
@@ -1539,6 +1782,30 @@ function LeadDetailsModal({
             </div>
           )}
 
+          {/* Action Buttons Section */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {!lead.contract_signed && isFechamentoStage && (
+              <button
+                onClick={handleSendContractForSignature}
+                className="flex items-center justify-center gap-2 rounded-lg border border-blue-600 bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                title="Enviar contrato para assinatura"
+              >
+                <FileSignature className="h-4 w-4" />
+                Enviar contrato para assinatura
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={handleCommissionClosure}
+                className="flex items-center justify-center gap-2 rounded-lg border border-green-600 bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                title="Fechamento de comissão"
+              >
+                <DollarSign className="h-4 w-4" />
+                Fechamento de comissão
+              </button>
+            )}
+          </div>
+
           <div>
             <div className="mb-3 flex items-center justify-between">
               <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
@@ -1562,14 +1829,53 @@ function LeadDetailsModal({
                 {invoices.map(invoice => (
                   <div
                     key={invoice.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <FileText className={`h-4 w-4 flex-shrink-0 ${invoice.signed_url ? 'text-blue-600' : 'text-gray-400'}`} />
-                      <span className="truncate">{invoice.filename_normalized || invoice.filename_original}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate font-medium">{invoice.filename_normalized || invoice.filename_original}</div>
+                        <div className="text-xs text-gray-500">{formatCurrencyValue(invoice.invoice_amount)}</div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="text-gray-500">{formatCurrencyValue(invoice.invoice_amount)}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => onGenerateSimulation(invoice)}
+                        className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          invoice.simulation
+                            ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                            : 'text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                        title={invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}
+                      >
+                        <FileSpreadsheet size={14} />
+                      </button>
+                      <button
+                        onClick={() => onGenerateProposal(invoice)}
+                        disabled={!invoice.simulation || generatingProposalIds.has(invoice.id)}
+                        className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          !invoice.simulation || generatingProposalIds.has(invoice.id)
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : invoice.proposal
+                            ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                            : 'text-purple-600 hover:bg-purple-50'
+                        }`}
+                        title={
+                          generatingProposalIds.has(invoice.id)
+                            ? 'Gerando proposta...'
+                            : !invoice.simulation
+                            ? 'Gere a simulação primeiro'
+                            : invoice.proposal
+                            ? 'Proposta gerada'
+                            : 'Gerar proposta'
+                        }
+                      >
+                        {generatingProposalIds.has(invoice.id) ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Presentation size={14} />
+                        )}
+                      </button>
                       <button
                         onClick={() => onOpenFile(invoice)}
                         disabled={!invoice.signed_url}
@@ -1594,62 +1900,207 @@ function LeadDetailsModal({
             )}
           </div>
 
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                <FileText className="h-4 w-4 text-green-600" />
-                Documentos enviados
-                {loadingDocuments && (
-                  <span className="text-xs text-gray-500">(carregando...)</span>
-                )}
-              </p>
-              <button
-                onClick={() => onUploadDocument(lead)}
-                className="flex items-center gap-1 rounded-lg border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-700"
-                title="Adicionar novo documento"
-              >
-                <Plus className="h-3 w-3" />
-                Adicionar
-              </button>
-            </div>
-            {documents.length > 0 ? (
-              <div className="space-y-2">
-                {documents.map(document => (
-                  <div
-                    key={document.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <FileText className={`h-4 w-4 flex-shrink-0 ${document.signed_url ? 'text-green-600' : 'text-gray-400'}`} />
+          {/* Documents section - only shown in Fechamento stage */}
+          {isFechamentoStage && (
+            <div className="space-y-6">
+              <div className="mb-3">
+                <p className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-4">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  Documentos necessários
+                </p>
+              </div>
+
+              {/* Contrato Social Section */}
+              <div className="rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-4">
+                <div className="mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-1">1. Contrato Social</h4>
+                  <p className="text-xs text-gray-600">Envie o Contrato Social da empresa</p>
+                </div>
+                
+                {/* Check if Contrato Social already exists */}
+                {documents.find(doc => doc.document_type === 'Contrato Social') ? (
+                  <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-green-600 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="truncate font-medium">{document.filename_normalized || document.filename_original}</div>
-                        <div className="text-xs text-gray-500">{document.document_type}</div>
+                        <div className="text-xs font-medium text-green-900 truncate">
+                          {documents.find(doc => doc.document_type === 'Contrato Social')?.filename_normalized || 
+                           documents.find(doc => doc.document_type === 'Contrato Social')?.filename_original}
+                        </div>
+                        <div className="text-xs text-green-700">Já enviado</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <button
-                        onClick={() => onOpenDocumentFile(document)}
-                        disabled={!document.signed_url}
-                        className={`flex items-center gap-1 text-xs font-medium transition-colors ${
-                          document.signed_url 
-                            ? 'text-green-600 hover:text-green-800' 
-                            : 'text-gray-400 cursor-not-allowed'
-                        }`}
-                        title={document.signed_url ? "Abrir arquivo" : "Arquivo não disponível"}
-                      >
-                        <ExternalLink size={14} />
-                        Abrir
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        const doc = documents.find(d => d.document_type === 'Contrato Social')
+                        if (doc) onOpenDocumentFile(doc)
+                      }}
+                      className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 flex-shrink-0"
+                    >
+                      <ExternalLink size={14} />
+                      Abrir
+                    </button>
                   </div>
-                ))}
+                ) : (
+                  <div>
+                    <label htmlFor="contrato-social-file" className="block">
+                      <input
+                        id="contrato-social-file"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        onChange={handleContratoSocialFileSelect}
+                        disabled={uploadingContratoSocial}
+                        className="hidden"
+                      />
+                      <div className="cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-white p-4 transition hover:border-[#ff6b35] hover:bg-gray-50">
+                        {contratoSocialFile ? (
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-8 w-8 text-[#ff6b35]" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{contratoSocialFile.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {(contratoSocialFile.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <Upload className="h-8 w-8 text-gray-400" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Clique para selecionar</p>
+                              <p className="text-xs text-gray-500">PDF, JPG, PNG ou WEBP (máx. 10MB)</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                    {contratoSocialFile && (
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setContratoSocialFile(null)}
+                          disabled={uploadingContratoSocial}
+                          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleUploadContratoSocial}
+                          disabled={uploadingContratoSocial}
+                          className="flex-1 rounded-lg bg-[#ff6b35] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#e85f2f] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {uploadingContratoSocial ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Enviando...
+                            </div>
+                          ) : (
+                            'Enviar'
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="text-center py-4 text-sm text-gray-500">
-                Nenhum documento enviado ainda
+
+              {/* Documento Pessoal Section */}
+              <div className="rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-4">
+                <div className="mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-1">2. Documento Pessoal do Representante</h4>
+                  <p className="text-xs text-gray-600">Envie o RG ou CNH do representante legal</p>
+                </div>
+                
+                {/* Check if Documento Pessoal already exists */}
+                {documents.find(doc => doc.document_type === 'Documento pessoal') ? (
+                  <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-green-900 truncate">
+                          {documents.find(doc => doc.document_type === 'Documento pessoal')?.filename_normalized || 
+                           documents.find(doc => doc.document_type === 'Documento pessoal')?.filename_original}
+                        </div>
+                        <div className="text-xs text-green-700">Já enviado</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const doc = documents.find(d => d.document_type === 'Documento pessoal')
+                        if (doc) onOpenDocumentFile(doc)
+                      }}
+                      className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 flex-shrink-0"
+                    >
+                      <ExternalLink size={14} />
+                      Abrir
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label htmlFor="documento-pessoal-file" className="block">
+                      <input
+                        id="documento-pessoal-file"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        onChange={handleDocumentoPessoalFileSelect}
+                        disabled={uploadingDocumentoPessoal}
+                        className="hidden"
+                      />
+                      <div className="cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-white p-4 transition hover:border-[#ff6b35] hover:bg-gray-50">
+                        {documentoPessoalFile ? (
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-8 w-8 text-[#ff6b35]" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{documentoPessoalFile.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {(documentoPessoalFile.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <Upload className="h-8 w-8 text-gray-400" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Clique para selecionar</p>
+                              <p className="text-xs text-gray-500">PDF, JPG, PNG ou WEBP (máx. 10MB)</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                    {documentoPessoalFile && (
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDocumentoPessoalFile(null)}
+                          disabled={uploadingDocumentoPessoal}
+                          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleUploadDocumentoPessoal}
+                          disabled={uploadingDocumentoPessoal}
+                          className="flex-1 rounded-lg bg-[#ff6b35] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#e85f2f] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {uploadingDocumentoPessoal ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Enviando...
+                            </div>
+                          ) : (
+                            'Enviar'
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
           </div>
         </div>
 

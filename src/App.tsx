@@ -15,6 +15,7 @@ import HelpPage from './pages/HelpPage';
 import LoginPage from './pages/LoginPage';
 import TrainingPage from './pages/TrainingPage';
 import MultinivelPage from './pages/MultinivelPage';
+import PartnerInvoicesPage from './pages/PartnerInvoicesPage';
 import { apiRequest } from './utils/api';
 import { User } from './types';
 import Negociacoes from './pages/Negociacoes';
@@ -173,6 +174,7 @@ export default function App() {
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="negociacoes" element={<Negociacoes />} />
+                <Route path="partner-invoices" element={<PartnerInvoicesPage />} />
                 {/* <Route path="agenda" element={<AgendaPage />} /> */}
                 {/* <Route path="proposals" element={<ProposalsPage />} /> */}
                 <Route path="commissions" element={<CommissionsPage />} /> 
@@ -205,6 +207,17 @@ export default function App() {
                     onLogin={handleLogin}
                     isLoading={isLoading}
                     error={error}
+                  />
+                }
+              />
+              <Route
+                path="/cadastro"
+                element={
+                  <LoginPage
+                    onLogin={handleLogin}
+                    isLoading={isLoading}
+                    error={error}
+                    initialTab="register"
                   />
                 }
               />

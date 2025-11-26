@@ -62,6 +62,15 @@ export const updateUserProfile = async (userId: string, userData: {
   zip_code?: string | null;
   birth_date?: string | null;
   pix_key?: string | null;
+  // PJ (Pessoa Jurídica) fields
+  pj_cnpj?: string | null;
+  pj_razaosocial?: string | null;
+  pj_nomefantasia?: string | null;
+  pj_phone?: string | null;
+  pj_address?: string | null;
+  pj_city?: string | null;
+  pj_state?: string | null;
+  pj_zip_code?: string | null;
 }) => {
   const response = await apiRequestWithAuth(`/users/${userId}`, {
     method: 'PUT',
@@ -362,6 +371,15 @@ export const registerUser = async (userData: {
   zip_code?: string;
   birth_date?: string;
   pix_key?: string;
+  // PJ (Pessoa Jurídica) fields
+  pj_cnpj?: string;
+  pj_razaosocial?: string;
+  pj_nomefantasia?: string;
+  pj_phone?: string;
+  pj_address?: string;
+  pj_city?: string;
+  pj_state?: string;
+  pj_zip_code?: string;
 }) => {
   const registerData = {
     ...userData,
@@ -408,7 +426,7 @@ export const downloadFileAsBase64 = async (url: string): Promise<string> => {
 };
 
 export const extractPptDataFromExcel = async (arquivoBase64: string) => {
-  const PPT_API_URL = 'http://localhost:3001/api/ppt/extract';
+  const PPT_API_URL = `${API_BASE_URL}/ppt/extract`;
   
   const response = await fetch(PPT_API_URL, {
     method: 'POST',
@@ -447,7 +465,7 @@ export const generatePptPresentation = async (pptData: any) => {
 
 // DocuSign API functions
 export const sendDocuSignEnvelope = async (payload: any) => {
-  const DOCUSIGN_API_URL = 'http://localhost:3001/api/docusign/send-docusign-envelope';
+  const DOCUSIGN_API_URL = `${API_BASE_URL}/docusign/send-docusign-envelope`;
   
   const response = await fetch(DOCUSIGN_API_URL, {
     method: 'POST',
@@ -460,6 +478,145 @@ export const sendDocuSignEnvelope = async (payload: any) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Failed to send DocuSign envelope' }));
     throw new Error(errorData.error || 'Failed to send contract for signature');
+  }
+
+  return response.json();
+};
+
+// Change Password API function
+export const changePassword = async (currentPassword: string, newPassword: string) => {
+  const response = await apiRequestWithAuth('/auth/change-password', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Failed to change password');
+  }
+
+  return data;
+};
+
+// Partner Invoice API functions
+export const getMyPartnerInvoices = async (params?: {
+  reference_month?: number;
+  reference_year?: number;
+}) => {
+  const queryParams = new URLSearchParams();
+  
+  if (params?.reference_month) queryParams.append('reference_month', params.reference_month.toString());
+  if (params?.reference_year) queryParams.append('reference_year', params.reference_year.toString());
+
+  const queryString = queryParams.toString();
+  const endpoint = `/partner-invoices/me${queryString ? `?${queryString}` : ''}`;
+
+  const response = await apiRequestWithAuth(endpoint);
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to fetch partner invoices');
+  }
+
+  return response.json();
+};
+
+export const getAllPartnerInvoices = async (params?: {
+  page?: number;
+  limit?: number;
+  reference_month?: number;
+  reference_year?: number;
+  partner_id?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  
+  if (params?.page) queryParams.append('page', params.page.toString());
+  if (params?.limit) queryParams.append('limit', params.limit.toString());
+  if (params?.reference_month) queryParams.append('reference_month', params.reference_month.toString());
+  if (params?.reference_year) queryParams.append('reference_year', params.reference_year.toString());
+  if (params?.partner_id) queryParams.append('partner_id', params.partner_id);
+
+  const queryString = queryParams.toString();
+  const endpoint = `/partner-invoices/${queryString ? `?${queryString}` : ''}`;
+
+  const response = await apiRequestWithAuth(endpoint);
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to fetch partner invoices');
+  }
+
+  return response.json();
+};
+
+export const uploadMyPartnerInvoice = async (
+  file: File,
+  reference_month: number,
+  reference_year: number,
+  invoice_amount?: string
+) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('reference_month', reference_month.toString());
+  formData.append('reference_year', reference_year.toString());
+  if (invoice_amount) {
+    formData.append('invoice_amount', invoice_amount);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/partner-invoices/me`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to upload partner invoice');
+  }
+
+  return response.json();
+};
+
+export const uploadPartnerInvoiceForPartner = async (
+  partnerId: string,
+  file: File,
+  reference_month: number,
+  reference_year: number,
+  invoice_amount?: string
+) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('reference_month', reference_month.toString());
+  formData.append('reference_year', reference_year.toString());
+  if (invoice_amount) {
+    formData.append('invoice_amount', invoice_amount);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/partner-invoices/partner/${partnerId}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to upload partner invoice');
+  }
+
+  return response.json();
+};
+
+export const getPartnerInvoiceSignedUrl = async (invoiceId: string) => {
+  const response = await apiRequestWithAuth(`/partner-invoices/invoice/${invoiceId}/signed-url`);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to get invoice signed URL');
   }
 
   return response.json();

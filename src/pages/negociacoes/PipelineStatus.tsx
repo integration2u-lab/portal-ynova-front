@@ -185,7 +185,8 @@ const stageDefinitions = [
 type StageDefinition = (typeof stageDefinitions)[number]
 
 const MAX_PIPELINE_STAGES = 11 as const
-const allowedStageDefinitions = stageDefinitions.slice(0, MAX_PIPELINE_STAGES) as StageDefinition[]
+// Skip first 2 stages (Prospecção and Fatura) - start from Qualificado
+const allowedStageDefinitions = stageDefinitions.slice(2, MAX_PIPELINE_STAGES) as StageDefinition[]
 const fallbackStageDefinition =
   allowedStageDefinitions[allowedStageDefinitions.length - 1] ?? stageDefinitions[stageDefinitions.length - 1]
 
@@ -774,20 +775,19 @@ const filteredStageLeads = useMemo(() => {
   const openInvoiceModal = () => setIsInvoiceModalOpen(true)
   const closeInvoiceModal = () => setIsInvoiceModalOpen(false)
 
-  const handleRefreshOcr = async () => {
+  const handleRefreshAll = async () => {
     setIsRefreshingOcr(true)
+    
     try {
-      const result = await checkAndUpdatePendingOcrJobs()
+      // First: Check and update pending OCR jobs
+      const ocrResult = await checkAndUpdatePendingOcrJobs()
       
-      if (result.success && result.updatedCount > 0) {
-        toast.success(`${result.updatedCount} lead(s) atualizado(s) com dados do OCR!`)
-        // Refresh the pipeline to show updated data
-        loadPipeline({ silent: true })
-      } else if (result.success && result.totalPending > 0 && result.updatedCount === 0) {
-        toast.info(`${result.totalPending} lead(s) ainda em processamento OCR`)
-      } else if (result.success) {
-        toast.info('Nenhum lead pendente de processamento OCR')
-      } else {
+      // Show OCR-specific feedback
+      if (ocrResult.success && ocrResult.updatedCount > 0) {
+        toast.success(`${ocrResult.updatedCount} lead(s) atualizado(s) com dados do OCR!`)
+      } else if (ocrResult.success && ocrResult.totalPending > 0 && ocrResult.updatedCount === 0) {
+        toast.info(`${ocrResult.totalPending} lead(s) ainda em processamento OCR`)
+      } else if (!ocrResult.success) {
         toast.error('Erro ao verificar status do OCR')
       }
     } catch (error) {
@@ -796,6 +796,9 @@ const filteredStageLeads = useMemo(() => {
     } finally {
       setIsRefreshingOcr(false)
     }
+    
+    // Then: Refresh all pipeline data (always runs, even if OCR check failed)
+    await loadPipeline({ silent: true })
   }
 
   const handleOpenLeadInvoices = async (lead: Lead) => {
@@ -1015,12 +1018,12 @@ const filteredStageLeads = useMemo(() => {
 
         <button
           type="button"
-          onClick={() => loadPipeline({ silent: true })}
-          disabled={loading || refreshing}
+          onClick={handleRefreshAll}
+          disabled={loading || refreshing || isRefreshingOcr}
           className="inline-flex items-center gap-2 self-start rounded-lg border border-[#ff6b35] px-4 py-2 text-sm font-semibold text-[#ff6b35] transition hover:bg-[#ff6b35] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-[#ff6b35] sm:self-auto"
         >
-          <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
+          <RefreshCcw className={`h-4 w-4 ${refreshing || isRefreshingOcr ? 'animate-spin' : ''}`} />
+          {refreshing || isRefreshingOcr ? 'Atualizando...' : 'Atualizar Dados'}
         </button>
       </div>
 
@@ -1159,14 +1162,14 @@ const filteredStageLeads = useMemo(() => {
 
       {/* Floating Action Buttons */}
       <div className="fixed right-6 bottom-6 z-40 flex flex-col gap-3">
-        {/* OCR Refresh Button */}
+        {/* Refresh All Button */}
         <button
-          onClick={handleRefreshOcr}
-          disabled={isRefreshingOcr}
+          onClick={handleRefreshAll}
+          disabled={loading || refreshing || isRefreshingOcr}
           className="rounded-full bg-blue-600 p-4 text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          title="Atualizar dados do OCR"
+          title="Atualizar dados"
         >
-          <RefreshCcw size={24} className={isRefreshingOcr ? 'animate-spin' : ''} />
+          <RefreshCcw size={24} className={refreshing || isRefreshingOcr ? 'animate-spin' : ''} />
         </button>
         
         {/* Invoice Upload Button */}

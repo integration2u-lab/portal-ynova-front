@@ -605,7 +605,7 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess, onRefre
       }
       
       formDataToSend.append('observations', observationsText);
-      formDataToSend.append('status', 'appointmentscheduled'); // Set default status
+      formDataToSend.append('status', 'qualifiedtobuy'); // Set default status to Qualificado pipeline
 
       const response = await apiRequestWithAuth('/leads', {
         method: 'POST',
@@ -739,7 +739,7 @@ export default function ModalUploadInvoice({ isOpen, onClose, onSuccess, onRefre
                   <div>
                     <Upload className="mx-auto text-gray-400 dark:text-gray-300 mb-2" size={32} />
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                      Arraste e solte o arquivo PDF/PNG/JPG aqui
+                      Arraste e solte o arquivo PDF aqui
                     </p>
                     <input
                       id="invoice-upload"

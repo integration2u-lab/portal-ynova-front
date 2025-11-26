@@ -5,13 +5,14 @@ type LoginPageProps = {
   onLogin: (e: React.FormEvent, email: string, password: string) => void;
   isLoading: boolean;
   error: string | null;
+  initialTab?: 'login' | 'register';
 };
 
-export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps) {
+export default function LoginPage({ onLogin, isLoading, error, initialTab = 'login' }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const [tab, setTab] = useState<'login' | 'register' | 'confirm'>('login');
+  const [tab, setTab] = useState<'login' | 'register' | 'confirm'>(initialTab);
 
   // Terms modal visibility
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -29,9 +30,42 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
   const [regZipCode, setRegZipCode] = useState('');
   const [regBirthDate, setRegBirthDate] = useState('');
   const [regPixKey, setRegPixKey] = useState('');
+  // PJ (Pessoa Jurídica) fields
+  const [regPjCnpj, setRegPjCnpj] = useState('');
+  const [regPjRazaoSocial, setRegPjRazaoSocial] = useState('');
+  const [regPjNomeFantasia, setRegPjNomeFantasia] = useState('');
+  const [regPjPhone, setRegPjPhone] = useState('');
+  const [regPjAddress, setRegPjAddress] = useState('');
+  const [regPjCity, setRegPjCity] = useState('');
+  const [regPjState, setRegPjState] = useState('');
+  const [regPjZipCode, setRegPjZipCode] = useState('');
   const [regError, setRegError] = useState('');
   const [regIsLoading, setRegIsLoading] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(true);
+
+  // CNPJ formatting function (00.000.000/0000-00)
+  const formatCnpj = (value: string): string => {
+    // Remove all non-digits
+    const cnpj = value.replace(/\D/g, '');
+    
+    // If empty, return empty
+    if (!cnpj) return '';
+    
+    // Apply mask based on length
+    if (cnpj.length <= 2) {
+      return cnpj;
+    } else if (cnpj.length <= 5) {
+      return `${cnpj.slice(0, 2)}.${cnpj.slice(2)}`;
+    } else if (cnpj.length <= 8) {
+      return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5)}`;
+    } else if (cnpj.length <= 12) {
+      return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8)}`;
+    } else {
+      // Limit to 14 digits
+      const limited = cnpj.slice(0, 14);
+      return `${limited.slice(0, 2)}.${limited.slice(2, 5)}.${limited.slice(5, 8)}/${limited.slice(8, 12)}-${limited.slice(12)}`;
+    }
+  };
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string): string => {
@@ -60,6 +94,16 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value);
     setRegPhone(formatted);
+  };
+
+  const handlePjPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setRegPjPhone(formatted);
+  };
+
+  const handlePjCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCnpj(e.target.value);
+    setRegPjCnpj(formatted);
   };
 
   const handlePasswordConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,6 +172,15 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
         zip_code: regZipCode || undefined,
         birth_date: regBirthDate || undefined,
         pix_key: regPixKey || undefined,
+        // PJ (Pessoa Jurídica) fields
+        pj_cnpj: regPjCnpj || undefined,
+        pj_razaosocial: regPjRazaoSocial || undefined,
+        pj_nomefantasia: regPjNomeFantasia || undefined,
+        pj_phone: regPjPhone || undefined,
+        pj_address: regPjAddress || undefined,
+        pj_city: regPjCity || undefined,
+        pj_state: regPjState || undefined,
+        pj_zip_code: regPjZipCode || undefined,
       });
       setTab('confirm');
     } catch (error) {
@@ -297,6 +350,94 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
           />
         </div>
       </div>
+
+      {/* PJ (Pessoa Jurídica) Information */}
+      <div className="border-t pt-4">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Dados da Pessoa Jurídica (opcional)</h4>
+        <div className="space-y-4">
+          <div>
+            <input
+              type="text"
+              placeholder="CNPJ (ex: 12.345.678/0001-99)"
+              value={regPjCnpj}
+              onChange={handlePjCnpjChange}
+              maxLength={18}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+            />
+          </div>
+          <div>
+            <input
+              type="text"
+              placeholder="Razão Social"
+              value={regPjRazaoSocial}
+              onChange={(e) => setRegPjRazaoSocial(e.target.value)}
+              maxLength={255}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+            />
+          </div>
+          <div>
+            <input
+              type="text"
+              placeholder="Nome Fantasia"
+              value={regPjNomeFantasia}
+              onChange={(e) => setRegPjNomeFantasia(e.target.value)}
+              maxLength={255}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+            />
+          </div>
+          <div>
+            <input
+              type="tel"
+              placeholder="Telefone PJ (ex: +55 11 99999-9999)"
+              value={regPjPhone}
+              onChange={handlePjPhoneChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+            />
+          </div>
+          <div>
+            <input
+              type="text"
+              placeholder="Endereço PJ"
+              value={regPjAddress}
+              onChange={(e) => setRegPjAddress(e.target.value)}
+              maxLength={255}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Cidade PJ"
+                value={regPjCity}
+                onChange={(e) => setRegPjCity(e.target.value)}
+                maxLength={255}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+              />
+            </div>
+            <div>
+              <input
+                type="text"
+                placeholder="Estado PJ (ex: SP)"
+                value={regPjState}
+                onChange={(e) => setRegPjState(e.target.value)}
+                maxLength={2}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+              />
+            </div>
+          </div>
+          <div>
+            <input
+              type="text"
+              placeholder="CEP PJ (ex: 01234-567)"
+              value={regPjZipCode}
+              onChange={(e) => setRegPjZipCode(e.target.value)}
+              maxLength={20}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE5200] dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+            />
+          </div>
+        </div>
+      </div>
       
       {/* Password Fields */}
       <div className="border-t pt-4">
@@ -377,6 +518,15 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
           setRegZipCode('');
           setRegBirthDate('');
           setRegPixKey('');
+          // Clear PJ fields
+          setRegPjCnpj('');
+          setRegPjRazaoSocial('');
+          setRegPjNomeFantasia('');
+          setRegPjPhone('');
+          setRegPjAddress('');
+          setRegPjCity('');
+          setRegPjState('');
+          setRegPjZipCode('');
           setRegError('');
           setPasswordsMatch(true);
         }}

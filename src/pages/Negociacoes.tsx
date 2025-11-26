@@ -57,7 +57,7 @@ export default function Negociacoes() {
           {/* {tab === "leads" && <LeadsKanban />} */}
           {tab === "pipeline" && <PipelineStatus />}
           {tab === "comissoes" && <ComissoesSection />}
-          {tab === "metas" && <ProgressoDeMetas fechamentosAtuais={36} />}
+          {tab === "metas" && <ProgressoDeMetas fechamentosAtuais={0} />}
         </div>
       </div>
     </div>

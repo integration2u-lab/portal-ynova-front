@@ -149,4 +149,33 @@ export type User = {
   role: string;
   client_id: string | null;
   created_at: string;
+  // PJ (Pessoa Jurídica) fields
+  pj_cnpj: string | null;
+  pj_razaosocial: string | null;
+  pj_nomefantasia: string | null;
+  pj_phone: string | null;
+  pj_address: string | null;
+  pj_city: string | null;
+  pj_state: string | null;
+  pj_zip_code: string | null;
+};
+
+export type PartnerInvoice = {
+  id: string;
+  partner_id: string;
+  reference_month: number;
+  reference_year: number;
+  filename_original: string;
+  filename_normalized: string;
+  storage_url: string;
+  signed_url?: string;
+  invoice_amount: string;
+  created_at: string;
+  updated_at: string;
+  partner?: {
+    id: string;
+    name: string;
+    surname: string;
+    email: string;
+  };
 };

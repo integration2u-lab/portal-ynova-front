@@ -27,6 +27,7 @@ import { User as UserType } from '../types';
 const navigation = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/negociacoes', label: 'Negociações', icon: Handshake },
+  { to: '/partner-invoices', label: 'Notas Fiscais', icon: FileText },
   { to: '/multinivel', label: 'Multinível', icon: MultinivelIcon },
   //{ to: '/agenda', label: 'Agenda', icon: Calendar },
   //{ to: '/proposals', label: 'Propostas', icon: FileText },

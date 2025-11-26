@@ -1,10 +1,17 @@
 import React from "react";
 
 // helpers: pseudônimo estável a partir do id
+const BRAZILIAN_UFS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
+  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
+  "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+];
+
 const pseudoFromId = (id: string) => {
   let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
   const hex = Math.abs(h).toString(16).toUpperCase().padStart(4, "0");
-  return `CONS-${hex}`;
+  const uf = BRAZILIAN_UFS[Math.abs(h) % BRAZILIAN_UFS.length];
+  return `${uf}-${hex}`;
 };
 
 const Medal: React.FC<{ pos: number }> = ({ pos }) => {

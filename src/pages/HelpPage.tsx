@@ -27,11 +27,15 @@ export default function HelpPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Phone size={16} className="text-gray-400" />
-              <span className="text-sm">(11) 4000-0000</span>
+              <span className="text-sm">FAQ: +55 (11) 99277-4616</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Phone size={16} className="text-gray-400" />
+              <span className="text-sm">Contato do Executivo: +55 (11) 94780-7848</span>
             </div>
             <div className="flex items-center gap-3">
               <Mail size={16} className="text-gray-400" />
-              <span className="text-sm">suporte@ynova.com.br</span>
+              <span className="text-sm">contato@ynovamarketplace.com.br</span>
             </div>
             <div className="flex items-center gap-3">
               <Clock size={16} className="text-gray-400" />

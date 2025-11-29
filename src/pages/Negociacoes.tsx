@@ -263,7 +263,7 @@ function ComissoesSection() {
                 <Th>Valor</Th>
                 <Th>Status</Th>
                 <Th>Data</Th>
-                <Th>Ações</Th>
+                {/* <Th>Ações</Th> */}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -291,11 +291,11 @@ function ComissoesSection() {
                     </Badge>
                   </Td>
                   <Td>{new Date(commission.created_at).toLocaleDateString('pt-BR')}</Td>
-                  <Td>
+                  {/* <Td>
                     <div className="flex gap-2">
-                      <BtnLink color="brand">Detalhes (Em breve)</BtnLink>
+                      <BtnLink color="brand">Detalhes</BtnLink>
                     </div>
-                  </Td>
+                  </Td> */}
                 </tr>
               ))}
             </tbody>

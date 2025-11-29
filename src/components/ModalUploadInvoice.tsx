@@ -95,7 +95,7 @@ export const checkAndUpdatePendingOcrJobs = async () => {
             consumer_unit: extractedData.codigo_instalacao || 'A DETERMINAR',
             name: extractedData.nome_cliente || 'A DETERMINAR',
             phone: '+55 (00) 00000-0000',
-            email: extractedData.email || 'contato@determinar.com.br',
+            email: extractedData.email || 'contato@cliente.com.br',
             cnpj: extractedData.documento_cliente || '00.000.000/0000-00',
             month: month,
             year: year,

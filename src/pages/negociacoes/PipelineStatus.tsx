@@ -613,6 +613,7 @@ const getStatusDisplay = (status: string) => {
 }
 
 export default function PipelineStatus() {
+  const { isAdmin } = useUser()
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [stageLeads, setStageLeads] = useState<Record<number, Lead[]>>({})
   const [loading, setLoading] = useState(true)
@@ -913,32 +914,15 @@ const filteredStageLeads = useMemo(() => {
       // Step 3: Generate PPT presentation via N8N
       const pptResponse = await generatePptPresentation(pptData)
       
-      if (!pptResponse.linkPpt) {
+      if (!pptResponse.linkDownloadPpt) {
         throw new Error('Link da apresentação não foi retornado')
       }
       
       // Step 4: Open the presentation in a new tab
-      window.open(pptResponse.linkPpt, '_blank')
+      window.open(pptResponse.linkDownloadPpt, '_blank')
       
       toast.success('Apresentação gerada com sucesso!')
       
-      // Step 5: If lead is in "Qualificado" stage, move it to "Apresentação"
-      if (isQualificadoStage && lead) {
-        toast.info('Movendo lead para etapa de Apresentação...')
-        
-        try {
-          await updateLead(lead.id, { status: 'apresentacao' })
-          
-          // Refresh the pipeline to show updated stage
-          loadPipeline({ silent: true })
-          setLeadDetailsRefreshTrigger(prev => prev + 1)
-          
-          toast.success('Lead movido para Apresentação!')
-        } catch (updateErr) {
-          console.error('Error updating lead status:', updateErr)
-          toast.warning('Apresentação gerada, mas não foi possível atualizar o status do lead')
-        }
-      }
     } catch (err) {
       console.error('Error generating proposal:', err)
       const errorMessage = err instanceof Error ? err.message : 'Falha ao gerar proposta'
@@ -1239,18 +1223,20 @@ const filteredStageLeads = useMemo(() => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => handleGenerateSimulation(invoice)}
-                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                          invoice.simulation
-                            ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100'
-                            : 'border-emerald-500 text-emerald-700 hover:bg-emerald-50'
-                        }`}
-                        title={invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}
-                      >
-                        <FileSpreadsheet size={16} />
-                        <span className="hidden sm:inline">{invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}</span>
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleGenerateSimulation(invoice)}
+                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                            invoice.simulation
+                              ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100'
+                              : 'border-emerald-500 text-emerald-700 hover:bg-emerald-50'
+                          }`}
+                          title={invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}
+                        >
+                          <FileSpreadsheet size={16} />
+                          <span className="hidden sm:inline">{invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => handleGenerateProposal(invoice)}
                         disabled={!invoice.simulation || generatingProposalIds.has(invoice.id)}
@@ -1490,9 +1476,10 @@ function LeadDetailsModal({
   const statusInfo = getStatusDisplay(lead.status)
   const currentStageName = getStageNameForStatus(lead.status)
   const isFechamentoStage = currentStageName === 'Fechamento'
+  const isQualificadoStage = currentStageName === 'Qualificado'
   const isApresentacaoStage = currentStageName === 'Apresentação'
   const isNegociacaoStage = currentStageName === 'Negociação'
-  const canMoveToNextStage = isApresentacaoStage || isNegociacaoStage
+  const canMoveToNextStage = isQualificadoStage || isApresentacaoStage || isNegociacaoStage
   
   const sources = lead.source
     ?.split(',')
@@ -1717,7 +1704,7 @@ function LeadDetailsModal({
             ))}
           </div>
 
-          {/* Move to Stage Dropdown - Only for Apresentação or Negociação stages */}
+          {/* Move to Stage Dropdown - Only for Qualificado, Apresentação or Negociação stages */}
           {canMoveToNextStage && (
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
               <label htmlFor="move-stage" className="mb-2 block text-sm font-semibold text-blue-900">
@@ -1738,10 +1725,13 @@ function LeadDetailsModal({
                   <option value="" disabled>
                     Selecione a próxima etapa
                   </option>
-                  {isApresentacaoStage && (
+                  {isQualificadoStage && (
+                    <option value="1142458135">Apresentação</option>
+                  )}
+                  {(isQualificadoStage || isApresentacaoStage) && (
                     <option value="decisionmakerboughtin">Negociação</option>
                   )}
-                  {(isApresentacaoStage || isNegociacaoStage) && (
+                  {(isQualificadoStage || isApresentacaoStage || isNegociacaoStage) && (
                     <option value="presentationscheduled">Fechamento</option>
                   )}
                 </select>
@@ -1753,7 +1743,9 @@ function LeadDetailsModal({
                 )}
               </div>
               <p className="mt-2 text-xs text-blue-700">
-                {isApresentacaoStage 
+                {isQualificadoStage 
+                  ? 'Avance o lead para Apresentação, Negociação ou Fechamento'
+                  : isApresentacaoStage 
                   ? 'Avance o lead para Negociação ou Fechamento'
                   : 'Avance o lead para Fechamento'}
               </p>
@@ -1762,8 +1754,8 @@ function LeadDetailsModal({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <InfoRow icon={Building2} label="CNPJ" value={lead.cnpj} />
-            <InfoRow icon={Mail} label="E-mail" value={lead.email} href={lead.email ? `mailto:${lead.email}` : undefined} />
-            <InfoRow icon={Phone} label="Telefone" value={lead.phone} href={lead.phone ? `tel:${lead.phone}` : undefined} />
+            {/* <InfoRow icon={Mail} label="E-mail" value={lead.email} href={lead.email ? `mailto:${lead.email}` : undefined} />
+            <InfoRow icon={Phone} label="Telefone" value={lead.phone} href={lead.phone ? `tel:${lead.phone}` : undefined} /> */}
             <InfoRow icon={Calendar} label="Período" value={`${lead.month} ${lead.year}`} />
             <InfoRow icon={FileText} label="Valor da fatura" value={formatCurrencyValue(lead.invoice_amount)} />
           </div>
@@ -1842,17 +1834,19 @@ function LeadDetailsModal({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => onGenerateSimulation(invoice)}
-                        className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
-                          invoice.simulation
-                            ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                            : 'text-emerald-600 hover:bg-emerald-50'
-                        }`}
-                        title={invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}
-                      >
-                        <FileSpreadsheet size={14} />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => onGenerateSimulation(invoice)}
+                          className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                            invoice.simulation
+                              ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                              : 'text-emerald-600 hover:bg-emerald-50'
+                          }`}
+                          title={invoice.simulation ? 'Baixar simulação' : 'Gerar simulação'}
+                        >
+                          <FileSpreadsheet size={14} />
+                        </button>
+                      )}
                       <button
                         onClick={() => onGenerateProposal(invoice)}
                         disabled={!invoice.simulation || generatingProposalIds.has(invoice.id)}

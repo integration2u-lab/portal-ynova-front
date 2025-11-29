@@ -436,7 +436,7 @@ const Bonuses = () => {
                       R$ {row.minValue.toLocaleString('pt-BR')} - R$ {row.maxValue.toLocaleString('pt-BR')}
                     </td>
                     <td className="py-3 px-4 text-right font-semibold text-[#FE5200]">
-                      R$ {row.commission.toFixed(2)}
+                      {row.commission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </td>
                   </tr>
                 ))}

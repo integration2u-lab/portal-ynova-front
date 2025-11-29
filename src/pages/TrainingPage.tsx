@@ -391,7 +391,7 @@ export default function TrainingPage() {
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       <div className="flex-shrink-0 mb-2 hidden md:block">
-        <h1 className="text-base font-semibold text-gray-900 dark:text-white">Treinamento para Consultor Ynova</h1>
+        <h1 className="text-base font-semibold text-gray-900 dark:text-white">Treinamento</h1>
       </div>
       <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden gap-4">
         <div className={`hidden md:flex md:flex-shrink-0 md:h-full transition-all duration-300 relative ${
